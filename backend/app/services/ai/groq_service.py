@@ -17,6 +17,37 @@ CRITICAL CONSTRAINTS:
 6. Provide clear, empathetic, citizen-friendly explanations in simple language.
 """
 
+def get_clean_groq_api_key() -> Optional[str]:
+    raw = settings.GROQ_API_KEY
+    if not raw or not raw.strip():
+        return None
+    cleaned = raw.strip().strip('"').strip("'")
+    if cleaned.lower().startswith("bearer "):
+        cleaned = cleaned[7:].strip()
+    return cleaned if cleaned else None
+
+def get_clean_groq_model() -> str:
+    raw = settings.GROQ_MODEL
+    if not raw or not raw.strip():
+        return "llama-3.3-70b-versatile"
+    cleaned = raw.strip().strip('"').strip("'")
+    return cleaned if cleaned else "llama-3.3-70b-versatile"
+
+def extract_safe_error_message(response: Any, api_key: Optional[str]) -> str:
+    err_text = ""
+    try:
+        data = response.json() if callable(getattr(response, "json", None)) else {}
+        if isinstance(data, dict):
+            err_text = data.get("error", {}).get("message", "")
+    except Exception:
+        pass
+    if not err_text:
+        raw_text = getattr(response, "text", "")
+        err_text = raw_text if isinstance(raw_text, str) else ""
+    if api_key and err_text:
+        err_text = err_text.replace(api_key, "[REDACTED]")
+    return err_text[:120].strip()
+
 async def generate_grounded_answer(
     query: str,
     passages: List[Passage],
@@ -97,44 +128,63 @@ async def generate_grounded_answer(
     )
 
     fallback_reason = "unconfigured"
+    safe_err = ""
 
     # 1. Attempt Groq API if configured
-    if settings.GROQ_API_KEY and settings.GROQ_API_KEY.strip():
+    clean_key = get_clean_groq_api_key()
+    configured_model = get_clean_groq_model()
+
+    if clean_key:
+        candidate_models = [configured_model]
+        for fb in ["llama-3.3-70b-versatile", "llama-3.1-8b-instant", "llama3-70b-8192"]:
+            if fb not in candidate_models:
+                candidate_models.append(fb)
+
         try:
             async with httpx.AsyncClient(timeout=20.0) as client:
-                response = await client.post(
-                    "https://api.groq.com/openai/v1/chat/completions",
-                    headers={
-                        "Authorization": f"Bearer {settings.GROQ_API_KEY.strip()}",
-                        "Content-Type": "application/json"
-                    },
-                    json={
-                        "model": settings.GROQ_MODEL,
-                        "messages": [
-                            {"role": "system", "content": SYSTEM_PROMPT},
-                            {"role": "user", "content": user_message}
-                        ],
-                        "temperature": 0.2,
-                        "max_tokens": 900
-                    }
-                )
-                if response.status_code == 200:
-                    data = response.json()
-                    answer_text = data["choices"][0]["message"]["content"]
-                    return {
-                        "answer": answer_text,
-                        "citations": citations,
-                        "model": settings.GROQ_MODEL,
-                        "is_fallback": False,
-                        "status": "success",
-                        "ai_provider": "groq",
-                        "fallback_reason": None
-                    }
-                else:
-                    fallback_reason = f"provider_http_{response.status_code}"
-                    logger.warning(
-                        f"Groq API returned HTTP {response.status_code}. Falling back to deterministic rule synthesis. (Response: {response.text[:150]})"
+                for model_candidate in candidate_models:
+                    response = await client.post(
+                        "https://api.groq.com/openai/v1/chat/completions",
+                        headers={
+                            "Authorization": f"Bearer {clean_key}",
+                            "Content-Type": "application/json"
+                        },
+                        json={
+                            "model": model_candidate,
+                            "messages": [
+                                {"role": "system", "content": SYSTEM_PROMPT},
+                                {"role": "user", "content": user_message}
+                            ],
+                            "temperature": 0.2,
+                            "max_tokens": 900
+                        }
                     )
+                    if response.status_code == 200:
+                        data = response.json()
+                        answer_text = data["choices"][0]["message"]["content"]
+                        return {
+                            "answer": answer_text,
+                            "citations": citations,
+                            "model": model_candidate,
+                            "is_fallback": False,
+                            "status": "success",
+                            "ai_provider": "groq",
+                            "fallback_reason": None
+                        }
+                    elif response.status_code == 404:
+                        safe_err = extract_safe_error_message(response, clean_key)
+                        logger.warning(
+                            f"Groq API returned HTTP 404 for model '{model_candidate}': {safe_err}. Trying fallback candidate..."
+                        )
+                        fallback_reason = "provider_http_404"
+                        continue
+                    else:
+                        fallback_reason = f"provider_http_{response.status_code}"
+                        safe_err = extract_safe_error_message(response, clean_key)
+                        logger.warning(
+                            f"Groq API returned HTTP {response.status_code}: {safe_err}. Falling back to deterministic rule synthesis."
+                        )
+                        break
         except httpx.TimeoutException:
             fallback_reason = "provider_timeout"
             logger.warning("Groq API request timed out after 20.0s. Falling back to deterministic rule synthesis.")
@@ -151,6 +201,8 @@ async def generate_grounded_answer(
         notice_line = "> ℹ️ **Notice: Live AI generation is currently offline (API key unconfigured). JanSahayak is displaying verified deterministic rule records.**\n"
     elif fallback_reason == "provider_timeout":
         notice_line = "> ⚠️ **Notice: Live AI service timed out. JanSahayak has safely engaged verified deterministic rule records.**\n"
+    elif safe_err:
+        notice_line = f"> ⚠️ **Notice: Live AI provider encountered a temporary error ({fallback_reason}: {safe_err}). JanSahayak has safely engaged verified deterministic rule records.**\n"
     else:
         notice_line = f"> ⚠️ **Notice: Live AI provider encountered a temporary error ({fallback_reason}). JanSahayak has safely engaged verified deterministic rule records.**\n"
 

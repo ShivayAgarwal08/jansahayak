@@ -1,3 +1,4 @@
+import httpx
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import Dict, Any, List
@@ -12,25 +13,93 @@ from app.schemas.assistant import (
     CitationSchema
 )
 from app.services.rag.retrieval import retrieve_grounded_passages
-from app.services.ai.groq_service import generate_grounded_answer
+from app.services.ai.groq_service import (
+    generate_grounded_answer,
+    get_clean_groq_api_key,
+    get_clean_groq_model
+)
 from app.services.ai.profile_extractor import extract_citizen_profile, generate_profile_followups
 from app.services.eligibility.engine import evaluate_scheme_eligibility
 
 router = APIRouter(prefix="/assistant", tags=["Assistant & RAG"])
 
 @router.get("/status", response_model=AssistantStatusResponse)
-def get_assistant_status():
+async def get_assistant_status(check_live: bool = False):
     """
     Check whether Groq AI is securely configured in the environment without exposing credentials.
+    Pass ?check_live=true to run a live probe against Groq's models endpoint.
     """
-    has_key = bool(settings.GROQ_API_KEY and settings.GROQ_API_KEY.strip())
-    return AssistantStatusResponse(
-        groq_configured=has_key,
-        groq_model=settings.GROQ_MODEL,
-        ai_provider="groq" if has_key else "none",
-        fallback_available=True,
-        status="online" if has_key else "fallback_mode"
-    )
+    clean_key = get_clean_groq_api_key()
+    clean_model = get_clean_groq_model()
+    has_key = bool(clean_key)
+
+    if not has_key:
+        return AssistantStatusResponse(
+            groq_configured=False,
+            groq_model=clean_model,
+            ai_provider="none",
+            fallback_available=True,
+            status="fallback_mode",
+            available_models=None,
+            provider_note="GROQ_API_KEY is not configured in environment"
+        )
+
+    if not check_live:
+        return AssistantStatusResponse(
+            groq_configured=True,
+            groq_model=clean_model,
+            ai_provider="groq",
+            fallback_available=True,
+            status="online",
+            available_models=None,
+            provider_note="Configured in environment"
+        )
+
+    # Live check if requested
+    try:
+        async with httpx.AsyncClient(timeout=6.0) as client:
+            resp = await client.get(
+                "https://api.groq.com/openai/v1/models",
+                headers={"Authorization": f"Bearer {clean_key}"}
+            )
+            if resp.status_code == 200:
+                data = resp.json()
+                model_ids = [m["id"] for m in data.get("data", [])]
+                return AssistantStatusResponse(
+                    groq_configured=True,
+                    groq_model=clean_model,
+                    ai_provider="groq",
+                    fallback_available=True,
+                    status="online",
+                    available_models=model_ids[:15],
+                    provider_note=f"Verified with Groq API ({len(model_ids)} models available)"
+                )
+            else:
+                err_text = ""
+                try:
+                    err_text = resp.json().get("error", {}).get("message", resp.text[:100])
+                except Exception:
+                    err_text = resp.text[:100]
+                safe_err = err_text.replace(clean_key, "[REDACTED]")[:100]
+                return AssistantStatusResponse(
+                    groq_configured=True,
+                    groq_model=clean_model,
+                    ai_provider="none",
+                    fallback_available=True,
+                    status=f"provider_http_{resp.status_code}",
+                    available_models=None,
+                    provider_note=f"Groq returned HTTP {resp.status_code}: {safe_err}"
+                )
+    except Exception as e:
+        return AssistantStatusResponse(
+            groq_configured=True,
+            groq_model=clean_model,
+            ai_provider="none",
+            fallback_available=True,
+            status="connection_error",
+            available_models=None,
+            provider_note=f"Failed to reach Groq API: {type(e).__name__}"
+        )
 
 @router.post("/chat", response_model=AssistantChatResponse)
 async def chat_with_assistant(

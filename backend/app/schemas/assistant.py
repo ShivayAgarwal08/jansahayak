@@ -38,3 +38,5 @@ class AssistantStatusResponse(BaseModel):
     ai_provider: str
     fallback_available: bool
     status: str
+    available_models: Optional[List[str]] = None
+    provider_note: Optional[str] = None
