@@ -23,51 +23,78 @@ STOPWORDS = {
     # Generic numbers and quantities (MUST NOT match maternity or old age schemes)
     "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "first", "second",
     "third", "double", "triple",
-    # Generic civic / question words
-    "qualify", "qualification", "eligible", "eligibility", "government", "govt", "scheme", "schemes",
-    "welfare", "apply", "applying", "help", "please", "know", "information", "details", "might",
-    "annual", "yearly", "monthly", "per", "amount", "rupees", "rs", "inr", "lakh", "lakhs"
+    # Generic conversational filler words (intent words like eligible/benefit/apply/exclusion are preserved!)
+    "government", "govt", "scheme", "schemes", "help", "please", "know", "information", "details",
+    "might", "annual", "yearly", "monthly", "per"
+}
+
+# Sub-Intent definitions for high-precision ranking
+QUERY_INTENTS = {
+    "eligibility": {
+        "query_keywords": ["eligible", "eligibility", "qualify", "qualification", "criteria", "who can", "who gets", "who is eligible", "condition", "conditions", "requirement", "requirements"],
+        "chunk_keywords": ["eligibility", "objective", "scope", "beneficiary", "beneficiaries", "entitlement", "target", "identification", "criteria"],
+        "boost": 18.0,
+        "reason": "Matched eligibility and qualification intent"
+    },
+    "exclusions": {
+        "query_keywords": ["exclusion", "exclusions", "disqualified", "disqualification", "ineligible", "not eligible", "barred", "cannot apply", "tax payer", "taxpayer", "income tax", "govt employee", "government employee"],
+        "chunk_keywords": ["exclusion", "exclusions", "disqualified", "disqualification", "ineligible", "not eligible", "mandatory ineligibility", "automatic exclusion", "higher economic status"],
+        "boost": 26.0,
+        "reason": "Matched exclusion and disqualification criteria"
+    },
+    "benefits": {
+        "query_keywords": ["benefit", "benefits", "assistance", "money", "rupees", "amount", "cash", "subsidy", "installment", "installments", "financial", "pension", "scale", "payout", "cost", "coverage", "grant"],
+        "chunk_keywords": ["benefit", "financial assistance", "installment", "pension", "allowance", "dbt", "cash", "unit assistance", "scale", "package", "rate"],
+        "boost": 20.0,
+        "reason": "Matched financial benefit and assistance structure"
+    },
+    "documents_application": {
+        "query_keywords": ["apply", "applying", "application", "document", "documents", "paperwork", "portal", "registration", "register", "process", "where to apply", "how to apply", "online", "procedure", "csc", "aadhaar"],
+        "chunk_keywords": ["verification", "portal", "documents", "registration", "grievance", "how to apply", "procedure", "csc", "redressal", "aadhaar", "mandatory", "records"],
+        "boost": 20.0,
+        "reason": "Matched application procedure and document verification intent"
+    }
 }
 
 # Domain Intent Mappings with high-precision keywords
 DOMAIN_INTENTS = {
     "pm-kisan": {
-        "keywords": {"farmer", "farmers", "farming", "kisan", "krishi", "land", "landholding", "cultivable", "cultivator", "bigha", "bighas", "acre", "acres", "agriculture", "agricultural"},
+        "keywords": {"farmer", "farmers", "farming", "kisan", "krishi", "land", "landholding", "cultivable", "cultivator", "bigha", "bighas", "acre", "acres", "agriculture", "agricultural", "pm-kisan", "pmkisan"},
         "boost": 25,
         "reason": "Matched agricultural & farmer landholding criteria"
     },
     "pmay-g": {
-        "keywords": {"housing", "house", "shelter", "kutcha", "pucca", "dilapidated", "awas", "gramin", "houseless", "roof", "room", "rural housing"},
+        "keywords": {"housing", "house", "shelter", "kutcha", "pucca", "dilapidated", "awas", "gramin", "houseless", "roof", "room", "rural housing", "pmay", "pmay-g", "pmayg", "awas yojana"},
         "boost": 25,
         "reason": "Matched rural housing & dwelling condition criteria"
     },
     "ayushman-bharat-pmjay": {
-        "keywords": {"health", "hospital", "hospitalization", "medical", "treatment", "doctor", "illness", "surgery", "ayushman", "golden card", "5 lakh", "pmjay", "healthcare"},
+        "keywords": {"health", "hospital", "hospitalization", "medical", "treatment", "doctor", "illness", "surgery", "ayushman", "golden card", "5 lakh", "pmjay", "pm-jay", "healthcare"},
         "boost": 25,
         "reason": "Matched health & secondary/tertiary hospital coverage criteria"
     },
     "pmmvy": {
-        "keywords": {"pregnant", "pregnancy", "maternity", "lactating", "delivery", "infant", "mother", "matru", "vandana", "first child", "institutional delivery"},
+        "keywords": {"pregnant", "pregnancy", "maternity", "lactating", "delivery", "infant", "mother", "matru", "vandana", "first child", "institutional delivery", "pmmvy"},
         "boost": 25,
         "reason": "Matched maternal health & pregnancy assistance criteria"
     },
     "ignoaps": {
-        "keywords": {"pension", "elderly", "senior", "senior citizen", "old age", "vridha", "60 years", "old", "destitute pension"},
+        "keywords": {"pension", "elderly", "senior", "senior citizen", "old age", "vridha", "60 years", "old", "destitute pension", "ignoaps", "nsap"},
         "boost": 25,
         "reason": "Matched senior citizen social security pension criteria"
     },
     "sukanya-samriddhi-yojana": {
-        "keywords": {"girl child", "daughter", "sukanya", "samriddhi", "girl", "beti", "under 10", "child education"},
+        "keywords": {"girl child", "daughter", "sukanya", "samriddhi", "girl", "beti", "under 10", "child education", "ssy"},
         "boost": 25,
         "reason": "Matched girl child savings & education welfare criteria"
     },
     "pm-svanidhi": {
-        "keywords": {"vendor", "street vendor", "hawker", "thela", "rehri", "svanidhi", "micro credit", "working capital", "footpath"},
+        "keywords": {"vendor", "street vendor", "hawker", "thela", "rehri", "svanidhi", "micro credit", "working capital", "footpath", "pm-svanidhi"},
         "boost": 25,
         "reason": "Matched urban street vendor micro-credit criteria"
     },
     "pm-vishwakarma": {
-        "keywords": {"artisan", "vishwakarma", "carpenter", "blacksmith", "goldsmith", "potter", "mason", "tailor", "barber", "craftsperson", "traditional craft", "tool kit"},
+        "keywords": {"artisan", "vishwakarma", "carpenter", "blacksmith", "goldsmith", "potter", "mason", "tailor", "barber", "craftsperson", "traditional craft", "tool kit", "pm-vishwakarma"},
         "boost": 25,
         "reason": "Matched traditional family artisan & craftsperson trade criteria"
     }
@@ -213,7 +240,8 @@ def retrieve_grounded_passages(
         if matched_kws:
             matched_domains[slug] = matched_kws
 
-    is_agri_query = "pm-kisan" in matched_domains or any(w in query_str_lower for w in ["farmer", "kisan", "cultivator", "bigha", "land"])
+    has_other_domain = any(slug != "pm-kisan" for slug in matched_domains.keys())
+    is_agri_query = ("pm-kisan" in matched_domains or any(w in query_str_lower for w in ["farmer", "kisan", "cultivator", "bigha", "land"])) and not has_other_domain
 
     # 1. Attempt vector search over ingested official DocumentChunk records
     db_chunks = []
@@ -247,7 +275,7 @@ def retrieve_grounded_passages(
         for chunk, doc, scheme in db_chunks:
             # Vector cosine similarity
             vec_sim = compute_cosine_similarity(query_vec, chunk.embedding) if chunk.embedding else 0.0
-            score = vec_sim * 40.0
+            score = vec_sim * 30.0
             reasons = [f"Semantic vector match ({vec_sim:.2f})"]
 
             # Domain intent boost
@@ -256,12 +284,28 @@ def retrieve_grounded_passages(
                 score += intent["boost"]
                 reasons.append(f"{intent['reason']} (matched: {', '.join(matched_domains[scheme.slug])})")
 
-            # Keyword and section matching
+            # Sub-intent boost (eligibility vs exclusions vs benefits vs application)
             content_lower = chunk.content.lower()
+            section_lower = (chunk.section_title or "").lower()
+            for intent_name, intent_data in QUERY_INTENTS.items():
+                if any(qk in query_str_lower for qk in intent_data["query_keywords"]):
+                    title_hits = [bk for bk in intent_data["chunk_keywords"] if bk in section_lower]
+                    content_hits = [bk for bk in intent_data["chunk_keywords"] if bk in content_lower]
+                    if title_hits:
+                        score += intent_data["boost"]
+                        reasons.append(f"{intent_data['reason']} in section title '{chunk.section_title}'")
+                    elif content_hits:
+                        score += intent_data["boost"] * 0.6
+                        reasons.append(f"{intent_data['reason']} in official guideline text")
+
+            # Keyword and section matching
             token_hits = 0
             for t in meaningful_tokens:
                 if t in content_lower or (chunk.keywords and t in chunk.keywords):
                     score += 4.0
+                    token_hits += 1
+                if t in section_lower:
+                    score += 6.0
                     token_hits += 1
 
             if token_hits > 0:

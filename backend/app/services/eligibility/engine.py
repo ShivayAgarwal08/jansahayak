@@ -206,7 +206,15 @@ def evaluate_scheme_eligibility(scheme: Any, profile: Dict[str, Any]) -> Eligibi
     # --- Ayushman Bharat PM-JAY ---
     elif slug == "ayushman-bharat-pmjay":
         age = profile.get("age")
-        is_secc_or_bpl = profile.get("is_bpl") or profile.get("is_secc_eligible")
+        # Tri-state handling for SECC/BPL status (prevents Python 'False or None' evaluating to None)
+        is_bpl_val = profile.get("is_bpl")
+        is_secc_val = profile.get("is_secc_eligible")
+        if is_bpl_val is True or is_secc_val is True:
+            is_secc_or_bpl = True
+        elif is_bpl_val is False or is_secc_val is False:
+            is_secc_or_bpl = False
+        else:
+            is_secc_or_bpl = None
         
         # Universal pathway for 70+
         if age is not None and age >= 70:

@@ -61,9 +61,11 @@ def chunk_document_text(
 
     chunks: List[ChunkResult] = []
     
-    # Check for explicit section breaks like "## Section", "Section N:", "Chapter N:", etc.
+    # Check for explicit section breaks like "## Section", "1. SECTION TITLE", "Section N:", "Chapter N:", etc.
+    # Matches Markdown headings (any case) OR unheaded major uppercase section titles (e.g., "1. OBJECTIVE & SCOPE")
+    # Excludes numbered list items (e.g., "1. Aadhaar Card") by requiring uppercase section titles on unheaded numbered lines
     section_pattern = re.compile(
-        r"(?:^|\n)(?:#{1,3}\s+|(?:\d+\.|\b[A-Z\s]{4,}\b:|\bSection\s+\d+:?|\bPart\s+[A-Z0-9]+:?|\bClause\s+\d+:?))\s*([^\n]+)",
+        r"(?:^|\n)(?:#{1,3}\s+([^\n]+)|(?:\d+\.|\b(?:Section|Chapter|Clause|Part)\s+\w+:?)\s+([A-Z][A-Z0-9\s,\-&/()+]{3,}))(?:\n|$)",
         re.MULTILINE
     )
     
@@ -77,7 +79,8 @@ def chunk_document_text(
             sec_text = text[last_pos:start].strip()
             if sec_text:
                 raw_sections.append((current_title, sec_text))
-        current_title = match.group(1).strip()
+        matched_title = (match.group(1) or match.group(2) or "").strip()
+        current_title = matched_title if matched_title else current_title
         last_pos = match.end()
         
     if last_pos < len(text):

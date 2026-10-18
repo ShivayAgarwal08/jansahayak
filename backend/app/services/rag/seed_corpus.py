@@ -265,11 +265,12 @@ Scheme Benefits:
     }
 ]
 
-def seed_official_documents_corpus(db: Session) -> Dict[str, Any]:
+def seed_official_documents_corpus(db: Session, force_refresh: bool = False) -> Dict[str, Any]:
     """
     Seed the official government scheme document corpus into KnowledgeDocument and DocumentChunk tables.
     Fully idempotent: inspects each document individually to prevent duplicate records or chunks
     on restarts, redeployments, or partial initial states.
+    Set force_refresh=True to re-chunk and update existing documents.
     """
     from app.models.scheme import Scheme
     ingested_count = 0
@@ -288,7 +289,7 @@ def seed_official_documents_corpus(db: Session) -> Dict[str, Any]:
                 KnowledgeDocument.source_url == doc_data["source_url"]
             ).first()
 
-            if existing_doc and len(existing_doc.chunks) > 0:
+            if not force_refresh and existing_doc and len(existing_doc.chunks) > 0:
                 skipped_count += 1
                 continue
 
