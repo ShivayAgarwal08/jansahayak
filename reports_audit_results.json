@@ -1,0 +1,966 @@
+{
+  "in_process": [
+    {
+      "endpoint": "/",
+      "method": "GET",
+      "scenario": "Root welcome endpoint",
+      "expected_status": 200,
+      "actual_status": 200,
+      "passed": true,
+      "evidence": "{'message': 'Welcome to JanSahayak (\u091c\u0928\u0938\u0939\u093e\u092f\u0915) API', 'docs': '/docs', 'health': '/api/health'}"
+    },
+    {
+      "endpoint": "/api/health",
+      "method": "GET",
+      "scenario": "Platform health check",
+      "expected_status": 200,
+      "actual_status": 200,
+      "passed": true,
+      "evidence": "{'status': 'healthy', 'service': 'JanSahayak Civic Platform API', 'version': '1.0.0', 'timestamp': '2026-10-18T13:50:44.488377+00:00'}"
+    },
+    {
+      "endpoint": "/api/health/db",
+      "method": "GET",
+      "scenario": "Database connection check",
+      "expected_status": 200,
+      "actual_status": 200,
+      "passed": true,
+      "evidence": "{'status': 'healthy', 'database': 'connected', 'dialect': 'sqlite', 'timestamp': '2026-10-18T13:50:44.493963+00:00'}"
+    },
+    {
+      "endpoint": "/api/schemes",
+      "method": "GET",
+      "scenario": "List verified schemes",
+      "expected_status": 200,
+      "actual_status": 200,
+      "passed": true,
+      "evidence": "[{'id': 1, 'slug': 'pm-kisan', 'name': 'PM-KISAN (Pradhan Mantri Kisan Samman Nidhi)', 'name_hi': '\u092a\u094d\u0930\u0927\u093e\u0928\u092e\u0902\u0924\u094d\u0930\u0940 \u0915\u093f\u0938\u093e\u0928 \u0938\u092e\u094d\u092e\u093e\u0928 \u0928\u093f\u0927\u093f (\u092a\u0940\u090f\u092e-\u0915\u093f\u0938\u093e\u0928)', 'summ"
+    },
+    {
+      "endpoint": "/api/schemes/categories",
+      "method": "GET",
+      "scenario": "Get scheme categories",
+      "expected_status": 200,
+      "actual_status": 200,
+      "passed": true,
+      "evidence": "[{'id': 'agriculture', 'name': 'Agriculture & Farmers', 'count': 1, 'icon': 'Sprout'}, {'id': 'housing', 'name': 'Housing & Shelter', 'count': 1, 'ico"
+    },
+    {
+      "endpoint": "/api/schemes/{slug}",
+      "method": "GET",
+      "scenario": "Get PM-KISAN details",
+      "expected_status": 200,
+      "actual_status": 200,
+      "passed": true,
+      "evidence": "{'id': 1, 'slug': 'pm-kisan', 'name': 'PM-KISAN (Pradhan Mantri Kisan Samman Nidhi)', 'name_hi': '\u092a\u094d\u0930\u0927\u093e\u0928\u092e\u0902\u0924\u094d\u0930\u0940 \u0915\u093f\u0938\u093e\u0928 \u0938\u092e\u094d\u092e\u093e\u0928 \u0928\u093f\u0927\u093f (\u092a\u0940\u090f\u092e-\u0915\u093f\u0938\u093e\u0928)', 'summa"
+    },
+    {
+      "endpoint": "/api/schemes/{slug}",
+      "method": "GET",
+      "scenario": "Non-existent scheme returns 404",
+      "expected_status": 404,
+      "actual_status": 404,
+      "passed": true,
+      "evidence": "{'detail': \"Scheme 'non-existent-scheme-xyz' not found.\"}"
+    },
+    {
+      "endpoint": "/api/schemes/compare",
+      "method": "GET",
+      "scenario": "Compare multiple schemes",
+      "expected_status": 200,
+      "actual_status": 200,
+      "passed": true,
+      "evidence": "[{'id': 1, 'slug': 'pm-kisan', 'name': 'PM-KISAN (Pradhan Mantri Kisan Samman Nidhi)', 'name_hi': '\u092a\u094d\u0930\u0927\u093e\u0928\u092e\u0902\u0924\u094d\u0930\u0940 \u0915\u093f\u0938\u093e\u0928 \u0938\u092e\u094d\u092e\u093e\u0928 \u0928\u093f\u0927\u093f (\u092a\u0940\u090f\u092e-\u0915\u093f\u0938\u093e\u0928)', 'summ"
+    },
+    {
+      "endpoint": "/api/voice/status",
+      "method": "GET",
+      "scenario": "Voice provider readiness status",
+      "expected_status": 200,
+      "actual_status": 200,
+      "passed": true,
+      "evidence": "{'provider': 'Bhashini (National Language Translation Mission)', 'configured': False, 'status': 'awaiting_credentials', 'supported_languages_count': 1"
+    },
+    {
+      "endpoint": "/api/voice/languages",
+      "method": "GET",
+      "scenario": "List supported 11 Indian languages",
+      "expected_status": 200,
+      "actual_status": 200,
+      "passed": true,
+      "evidence": "[{'code': 'en', 'name': 'English', 'native': 'English', 'script': 'Latn'}, {'code': 'hi', 'name': 'Hindi', 'native': '\u0939\u093f\u0928\u094d\u0926\u0940', 'script': 'Deva'}, {'co"
+    },
+    {
+      "endpoint": "/api/voice/stt",
+      "method": "POST",
+      "scenario": "Speech-to-text with fallback",
+      "expected_status": 200,
+      "actual_status": 200,
+      "passed": true,
+      "evidence": "{'success': False, 'text': '', 'error': 'Bhashini credentials are not configured on this server.', 'use_browser_speech': True}"
+    },
+    {
+      "endpoint": "/api/voice/translate",
+      "method": "POST",
+      "scenario": "Translation with fallback",
+      "expected_status": 200,
+      "actual_status": 200,
+      "passed": true,
+      "evidence": "{'success': False, 'translated_text': 'Hello', 'error': 'Bhashini credentials pending configuration.'}"
+    },
+    {
+      "endpoint": "/api/assistant/chat",
+      "method": "POST",
+      "scenario": "Grounded AI chat with citation",
+      "expected_status": 200,
+      "actual_status": 200,
+      "passed": true,
+      "evidence": "{'answer': '**Information from Verified Records (PM-KISAN (Pradhan Mantri Kisan Samman Nidhi))**\\n\\nScheme: PM-KISAN (Pradhan Mantri Kisan Samman Nidh"
+    },
+    {
+      "endpoint": "/api/feedback",
+      "method": "POST",
+      "scenario": "Submit citizen feedback",
+      "expected_status": [
+        200,
+        201
+      ],
+      "actual_status": 201,
+      "passed": true,
+      "evidence": "{'id': 2, 'user_id': None, 'category': 'general', 'scheme_slug': None, 'message': 'Audit test feedback verification', 'created_at': '2026-10-18T13:50:"
+    },
+    {
+      "endpoint": "/api/auth/me",
+      "method": "GET",
+      "scenario": "Unauthenticated profile access fails",
+      "expected_status": 401,
+      "actual_status": 401,
+      "passed": true,
+      "evidence": "{'detail': 'Could not validate authentication credentials. Please log in.'}"
+    },
+    {
+      "endpoint": "/api/applications",
+      "method": "GET",
+      "scenario": "Unauthenticated application drafts fails",
+      "expected_status": 401,
+      "actual_status": 401,
+      "passed": true,
+      "evidence": "{'detail': 'Could not validate authentication credentials. Please log in.'}"
+    },
+    {
+      "endpoint": "/api/admin/schemes",
+      "method": "GET",
+      "scenario": "Unauthenticated admin endpoint fails",
+      "expected_status": 401,
+      "actual_status": 401,
+      "passed": true,
+      "evidence": "{'detail': 'Could not validate authentication credentials. Please log in.'}"
+    },
+    {
+      "endpoint": "/api/auth/register",
+      "method": "POST",
+      "scenario": "Register new citizen account",
+      "expected_status": 200,
+      "actual_status": 200,
+      "passed": true,
+      "evidence": "{'access_token': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyIiwicm9sZSI6ImNpdGl6ZW4iLCJleHAiOjE3OTI0MTc4NDUsImlhdCI6MTc5MjMzMTQ0NX0.jC0vRhwR3Z2"
+    },
+    {
+      "endpoint": "/api/auth/login",
+      "method": "POST",
+      "scenario": "Login with valid credentials",
+      "expected_status": 200,
+      "actual_status": 200,
+      "passed": true,
+      "evidence": "{'access_token': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyIiwicm9sZSI6ImNpdGl6ZW4iLCJleHAiOjE3OTI0MTc4NDUsImlhdCI6MTc5MjMzMTQ0NX0.jC0vRhwR3Z2"
+    },
+    {
+      "endpoint": "/api/auth/me",
+      "method": "GET",
+      "scenario": "Get authenticated citizen profile",
+      "expected_status": 200,
+      "actual_status": 200,
+      "passed": true,
+      "evidence": "{'id': 2, 'full_name': 'Test Auditor Citizen', 'email': 'audit_citizen_1792331444@example.com', 'phone': '9812345678', 'role': 'citizen', 'preferred_l"
+    },
+    {
+      "endpoint": "/api/auth/me",
+      "method": "PUT",
+      "scenario": "Update citizen profile details",
+      "expected_status": 200,
+      "actual_status": 200,
+      "passed": true,
+      "evidence": "{'id': 2, 'full_name': 'Auditor Updated Name', 'email': 'audit_citizen_1792331444@example.com', 'phone': '9812345678', 'role': 'citizen', 'preferred_l"
+    },
+    {
+      "endpoint": "/api/eligibility/assess",
+      "method": "POST",
+      "scenario": "Evaluate eligibility with deterministic engine",
+      "expected_status": 200,
+      "actual_status": 200,
+      "passed": true,
+      "evidence": "{'scheme_id': 1, 'scheme_slug': 'pm-kisan', 'scheme_name': 'PM-KISAN (Pradhan Mantri Kisan Samman Nidhi)', 'status': 'possibly_eligible', 'summary_exp"
+    },
+    {
+      "endpoint": "/api/eligibility/history",
+      "method": "GET",
+      "scenario": "Fetch user assessment history",
+      "expected_status": 200,
+      "actual_status": 200,
+      "passed": true,
+      "evidence": "[{'id': 1, 'scheme_id': 1, 'scheme_name': 'PM-KISAN (Pradhan Mantri Kisan Samman Nidhi)', 'scheme_slug': 'pm-kisan', 'status': 'possibly_eligible', 'i"
+    },
+    {
+      "endpoint": "/api/eligibility/download-report",
+      "method": "POST",
+      "scenario": "Generate citizen eligibility PDF",
+      "expected_status": 200,
+      "actual_status": 200,
+      "passed": true,
+      "evidence": "Bytes/Non-JSON (3527 bytes)"
+    },
+    {
+      "endpoint": "/api/applications",
+      "method": "POST",
+      "scenario": "Create application draft",
+      "expected_status": 201,
+      "actual_status": 201,
+      "passed": true,
+      "evidence": "{'id': 1, 'user_id': 2, 'scheme_id': 1, 'title': 'PM Kisan Application Draft Audit', 'applicant_details': {'name': 'Auditor', 'land_survey_no': '123/4"
+    },
+    {
+      "endpoint": "/api/applications",
+      "method": "GET",
+      "scenario": "List user application drafts",
+      "expected_status": 200,
+      "actual_status": 200,
+      "passed": true,
+      "evidence": "[{'id': 1, 'user_id': 2, 'scheme_id': 1, 'title': 'PM Kisan Application Draft Audit', 'applicant_details': {'name': 'Auditor', 'land_survey_no': '123/"
+    },
+    {
+      "endpoint": "/api/applications/{draft_id}",
+      "method": "GET",
+      "scenario": "Get single application draft",
+      "expected_status": 200,
+      "actual_status": 200,
+      "passed": true,
+      "evidence": "{'id': 1, 'user_id': 2, 'scheme_id': 1, 'title': 'PM Kisan Application Draft Audit', 'applicant_details': {'name': 'Auditor', 'land_survey_no': '123/4"
+    },
+    {
+      "endpoint": "/api/applications/{draft_id}",
+      "method": "PUT",
+      "scenario": "Update application draft",
+      "expected_status": 200,
+      "actual_status": 200,
+      "passed": true,
+      "evidence": "{'id': 1, 'user_id': 2, 'scheme_id': 1, 'title': 'Updated Draft Title', 'applicant_details': {'name': 'Auditor', 'land_survey_no': '123/4'}, 'checklis"
+    },
+    {
+      "endpoint": "/api/applications/{draft_id}/pdf",
+      "method": "GET",
+      "scenario": "Download application summary PDF",
+      "expected_status": 200,
+      "actual_status": 200,
+      "passed": true,
+      "evidence": "Bytes/Non-JSON (3319 bytes)"
+    },
+    {
+      "endpoint": "/api/applications/{draft_id}",
+      "method": "DELETE",
+      "scenario": "Delete application draft",
+      "expected_status": 200,
+      "actual_status": 200,
+      "passed": true,
+      "evidence": "{'message': 'Draft deleted successfully.'}"
+    },
+    {
+      "endpoint": "/api/rti",
+      "method": "POST",
+      "scenario": "Create RTI petition draft",
+      "expected_status": 201,
+      "actual_status": 201,
+      "passed": true,
+      "evidence": "{'id': 1, 'user_id': 2, 'public_authority': 'Department of Agriculture', 'subject': 'Delay in PM-KISAN 16th Installment', 'information_requested': 'Pr"
+    },
+    {
+      "endpoint": "/api/rti",
+      "method": "GET",
+      "scenario": "List RTI drafts",
+      "expected_status": 200,
+      "actual_status": 200,
+      "passed": true,
+      "evidence": "[{'id': 1, 'user_id': 2, 'public_authority': 'Department of Agriculture', 'subject': 'Delay in PM-KISAN 16th Installment', 'information_requested': 'P"
+    },
+    {
+      "endpoint": "/api/rti/{draft_id}",
+      "method": "GET",
+      "scenario": "Get single RTI draft",
+      "expected_status": 200,
+      "actual_status": 200,
+      "passed": true,
+      "evidence": "{'id': 1, 'user_id': 2, 'public_authority': 'Department of Agriculture', 'subject': 'Delay in PM-KISAN 16th Installment', 'information_requested': 'Pr"
+    },
+    {
+      "endpoint": "/api/rti/{draft_id}",
+      "method": "PUT",
+      "scenario": "Update RTI draft",
+      "expected_status": 200,
+      "actual_status": 200,
+      "passed": true,
+      "evidence": "{'id': 1, 'user_id': 2, 'public_authority': 'Department of Agriculture', 'subject': 'Updated RTI Subject', 'information_requested': 'Provide official "
+    },
+    {
+      "endpoint": "/api/rti/{draft_id}/pdf",
+      "method": "GET",
+      "scenario": "Download RTI petition PDF",
+      "expected_status": 200,
+      "actual_status": 200,
+      "passed": true,
+      "evidence": "Bytes/Non-JSON (2763 bytes)"
+    },
+    {
+      "endpoint": "/api/rti/{draft_id}",
+      "method": "DELETE",
+      "scenario": "Delete RTI draft",
+      "expected_status": 200,
+      "actual_status": 200,
+      "passed": true,
+      "evidence": "{'message': 'RTI draft deleted successfully.'}"
+    },
+    {
+      "endpoint": "/api/grievances",
+      "method": "POST",
+      "scenario": "Create Grievance representation draft",
+      "expected_status": 201,
+      "actual_status": 201,
+      "passed": true,
+      "evidence": "{'id': 1, 'user_id': 2, 'department': 'Revenue and Land Records', 'category': 'Land Record Verification Delay', 'description': 'Patta mutation certifi"
+    },
+    {
+      "endpoint": "/api/grievances",
+      "method": "GET",
+      "scenario": "List Grievance drafts",
+      "expected_status": 200,
+      "actual_status": 200,
+      "passed": true,
+      "evidence": "[{'id': 1, 'user_id': 2, 'department': 'Revenue and Land Records', 'category': 'Land Record Verification Delay', 'description': 'Patta mutation certif"
+    },
+    {
+      "endpoint": "/api/grievances/{draft_id}",
+      "method": "GET",
+      "scenario": "Get single Grievance draft",
+      "expected_status": 200,
+      "actual_status": 200,
+      "passed": true,
+      "evidence": "{'id': 1, 'user_id': 2, 'department': 'Revenue and Land Records', 'category': 'Land Record Verification Delay', 'description': 'Patta mutation certifi"
+    },
+    {
+      "endpoint": "/api/grievances/{draft_id}",
+      "method": "PUT",
+      "scenario": "Update Grievance draft",
+      "expected_status": 200,
+      "actual_status": 200,
+      "passed": true,
+      "evidence": "{'id': 1, 'user_id': 2, 'department': 'Revenue and Land Records', 'category': 'Land Record Verification Delay', 'description': 'Updated Grievance Desc"
+    },
+    {
+      "endpoint": "/api/grievances/{draft_id}/pdf",
+      "method": "GET",
+      "scenario": "Download Grievance representation PDF",
+      "expected_status": 200,
+      "actual_status": 200,
+      "passed": true,
+      "evidence": "Bytes/Non-JSON (2543 bytes)"
+    },
+    {
+      "endpoint": "/api/grievances/{draft_id}",
+      "method": "DELETE",
+      "scenario": "Delete Grievance draft",
+      "expected_status": 200,
+      "actual_status": 200,
+      "passed": true,
+      "evidence": "{'message': 'Grievance draft deleted successfully.'}"
+    },
+    {
+      "endpoint": "/api/dashboard/saved-schemes/{scheme_id}",
+      "method": "POST",
+      "scenario": "Toggle bookmark scheme (Save)",
+      "expected_status": 200,
+      "actual_status": 200,
+      "passed": true,
+      "evidence": "{'saved': True, 'message': 'Scheme saved to your citizen dashboard.'}"
+    },
+    {
+      "endpoint": "/api/dashboard/saved-schemes",
+      "method": "GET",
+      "scenario": "Get saved schemes",
+      "expected_status": 200,
+      "actual_status": 200,
+      "passed": true,
+      "evidence": "[{'saved_id': 1, 'scheme_id': 1, 'slug': 'pm-kisan', 'name': 'PM-KISAN (Pradhan Mantri Kisan Samman Nidhi)', 'name_hi': '\u092a\u094d\u0930\u0927\u093e\u0928\u092e\u0902\u0924\u094d\u0930\u0940 \u0915\u093f\u0938\u093e\u0928 \u0938\u092e\u094d\u092e\u093e\u0928 \u0928\u093f\u0927"
+    },
+    {
+      "endpoint": "/api/dashboard/stats",
+      "method": "GET",
+      "scenario": "Get citizen dashboard statistics",
+      "expected_status": 200,
+      "actual_status": 200,
+      "passed": true,
+      "evidence": "{'saved_schemes_count': 1, 'application_drafts_count': 0, 'rti_drafts_count': 0, 'grievance_drafts_count': 0, 'assessments_count': 1, 'recent_assessme"
+    },
+    {
+      "endpoint": "/api/dashboard/saved-schemes/{scheme_id}",
+      "method": "POST",
+      "scenario": "Toggle bookmark scheme (Unsave)",
+      "expected_status": 200,
+      "actual_status": 200,
+      "passed": true,
+      "evidence": "{'saved': False, 'message': 'Scheme removed from saved list.'}"
+    },
+    {
+      "endpoint": "/api/auth/login",
+      "method": "POST",
+      "scenario": "Admin authentication",
+      "expected_status": 200,
+      "actual_status": 200,
+      "passed": true,
+      "evidence": "{'access_token': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwicm9sZSI6ImFkbWluIiwiZXhwIjoxNzkyNDE3ODQ2LCJpYXQiOjE3OTIzMzE0NDZ9.9uYftjzJ-wO8tt"
+    },
+    {
+      "endpoint": "/api/admin/schemes",
+      "method": "GET",
+      "scenario": "Admin list all schemes",
+      "expected_status": 200,
+      "actual_status": 200,
+      "passed": true,
+      "evidence": "[{'id': 1, 'slug': 'pm-kisan', 'name': 'PM-KISAN (Pradhan Mantri Kisan Samman Nidhi)', 'name_hi': '\u092a\u094d\u0930\u0927\u093e\u0928\u092e\u0902\u0924\u094d\u0930\u0940 \u0915\u093f\u0938\u093e\u0928 \u0938\u092e\u094d\u092e\u093e\u0928 \u0928\u093f\u0927\u093f (\u092a\u0940\u090f\u092e-\u0915\u093f\u0938\u093e\u0928)', 'summ"
+    },
+    {
+      "endpoint": "/api/admin/schemes/{scheme_id}/verify",
+      "method": "PUT",
+      "scenario": "Admin update scheme verification status",
+      "expected_status": 200,
+      "actual_status": 200,
+      "passed": true,
+      "evidence": "{'id': 1, 'slug': 'pm-kisan', 'name': 'PM-KISAN (Pradhan Mantri Kisan Samman Nidhi)', 'name_hi': '\u092a\u094d\u0930\u0927\u093e\u0928\u092e\u0902\u0924\u094d\u0930\u0940 \u0915\u093f\u0938\u093e\u0928 \u0938\u092e\u094d\u092e\u093e\u0928 \u0928\u093f\u0927\u093f (\u092a\u0940\u090f\u092e-\u0915\u093f\u0938\u093e\u0928)', 'summa"
+    },
+    {
+      "endpoint": "/api/admin/audit-logs",
+      "method": "GET",
+      "scenario": "Admin get audit logs",
+      "expected_status": 200,
+      "actual_status": 200,
+      "passed": true,
+      "evidence": "[{'id': 2, 'target_type': 'scheme', 'details': {'scheme_slug': 'pm-kisan', 'old_status': 'verified', 'new_status': 'verified', 'notes': 'Audited prove"
+    },
+    {
+      "endpoint": "/api/admin/feedbacks",
+      "method": "GET",
+      "scenario": "Admin get citizen feedbacks",
+      "expected_status": 200,
+      "actual_status": 200,
+      "passed": true,
+      "evidence": "[{'scheme_slug': None, 'id': 2, 'created_at': '2026-10-18T13:50:44.743583', 'message': 'Audit test feedback verification', 'user_id': None, 'category'"
+    },
+    {
+      "endpoint": "/api/auth/me",
+      "method": "DELETE",
+      "scenario": "Citizen account permanent deletion",
+      "expected_status": 200,
+      "actual_status": 200,
+      "passed": true,
+      "evidence": "{'message': 'Your account and all associated personal records have been permanently deleted.'}"
+    },
+    {
+      "endpoint": "/api/auth/login",
+      "method": "POST",
+      "scenario": "Deleted citizen cannot log in",
+      "expected_status": 401,
+      "actual_status": 401,
+      "passed": true,
+      "evidence": "{'detail': 'Invalid email or password. Please verify your credentials.'}"
+    }
+  ],
+  "live": [
+    {
+      "endpoint": "/",
+      "method": "GET",
+      "scenario": "Root welcome endpoint",
+      "expected_status": 200,
+      "actual_status": 200,
+      "passed": true,
+      "evidence": "{'message': 'Welcome to JanSahayak (\u091c\u0928\u0938\u0939\u093e\u092f\u0915) API', 'docs': '/docs', 'health': '/api/health'}"
+    },
+    {
+      "endpoint": "/api/health",
+      "method": "GET",
+      "scenario": "Platform health check",
+      "expected_status": 200,
+      "actual_status": 200,
+      "passed": true,
+      "evidence": "{'status': 'healthy', 'service': 'JanSahayak Civic Platform API', 'version': '1.0.0', 'timestamp': '2026-10-18T13:50:48.254641+00:00'}"
+    },
+    {
+      "endpoint": "/api/health/db",
+      "method": "GET",
+      "scenario": "Database connection check",
+      "expected_status": 200,
+      "actual_status": 200,
+      "passed": true,
+      "evidence": "{'status': 'healthy', 'database': 'connected', 'dialect': 'postgresql', 'timestamp': '2026-10-18T13:50:48.516694+00:00'}"
+    },
+    {
+      "endpoint": "/api/schemes",
+      "method": "GET",
+      "scenario": "List verified schemes",
+      "expected_status": 200,
+      "actual_status": 200,
+      "passed": true,
+      "evidence": "[{'id': 2, 'slug': 'pmay-g', 'name': 'Pradhan Mantri Awaas Yojana - Gramin (PMAY-G)', 'name_hi': '\u092a\u094d\u0930\u0927\u093e\u0928\u092e\u0902\u0924\u094d\u0930\u0940 \u0906\u0935\u093e\u0938 \u092f\u094b\u091c\u0928\u093e - \u0917\u094d\u0930\u093e\u092e\u0940\u0923 (\u092a\u0940\u090f\u092e\u090f\u0935\u093e\u0908-\u091c\u0940)', 's"
+    },
+    {
+      "endpoint": "/api/schemes/categories",
+      "method": "GET",
+      "scenario": "Get scheme categories",
+      "expected_status": 200,
+      "actual_status": 200,
+      "passed": true,
+      "evidence": "[{'id': 'agriculture', 'name': 'Agriculture & Farmers', 'count': 1, 'icon': 'Sprout'}, {'id': 'housing', 'name': 'Housing & Shelter', 'count': 1, 'ico"
+    },
+    {
+      "endpoint": "/api/schemes/{slug}",
+      "method": "GET",
+      "scenario": "Get PM-KISAN details",
+      "expected_status": 200,
+      "actual_status": 200,
+      "passed": true,
+      "evidence": "{'id': 1, 'slug': 'pm-kisan', 'name': 'PM-KISAN (Pradhan Mantri Kisan Samman Nidhi)', 'name_hi': '\u092a\u094d\u0930\u0927\u093e\u0928\u092e\u0902\u0924\u094d\u0930\u0940 \u0915\u093f\u0938\u093e\u0928 \u0938\u092e\u094d\u092e\u093e\u0928 \u0928\u093f\u0927\u093f (\u092a\u0940\u090f\u092e-\u0915\u093f\u0938\u093e\u0928)', 'summa"
+    },
+    {
+      "endpoint": "/api/schemes/{slug}",
+      "method": "GET",
+      "scenario": "Non-existent scheme returns 404",
+      "expected_status": 404,
+      "actual_status": 404,
+      "passed": true,
+      "evidence": "{'detail': \"Scheme 'non-existent-scheme-xyz' not found.\"}"
+    },
+    {
+      "endpoint": "/api/schemes/compare",
+      "method": "GET",
+      "scenario": "Compare multiple schemes",
+      "expected_status": 200,
+      "actual_status": 200,
+      "passed": true,
+      "evidence": "[{'id': 2, 'slug': 'pmay-g', 'name': 'Pradhan Mantri Awaas Yojana - Gramin (PMAY-G)', 'name_hi': '\u092a\u094d\u0930\u0927\u093e\u0928\u092e\u0902\u0924\u094d\u0930\u0940 \u0906\u0935\u093e\u0938 \u092f\u094b\u091c\u0928\u093e - \u0917\u094d\u0930\u093e\u092e\u0940\u0923 (\u092a\u0940\u090f\u092e\u090f\u0935\u093e\u0908-\u091c\u0940)', 's"
+    },
+    {
+      "endpoint": "/api/voice/status",
+      "method": "GET",
+      "scenario": "Voice provider readiness status",
+      "expected_status": 200,
+      "actual_status": 200,
+      "passed": true,
+      "evidence": "{'provider': 'Bhashini (National Language Translation Mission)', 'configured': False, 'status': 'awaiting_credentials', 'supported_languages_count': 1"
+    },
+    {
+      "endpoint": "/api/voice/languages",
+      "method": "GET",
+      "scenario": "List supported 11 Indian languages",
+      "expected_status": 200,
+      "actual_status": 200,
+      "passed": true,
+      "evidence": "[{'code': 'en', 'name': 'English', 'native': 'English', 'script': 'Latn'}, {'code': 'hi', 'name': 'Hindi', 'native': '\u0939\u093f\u0928\u094d\u0926\u0940', 'script': 'Deva'}, {'co"
+    },
+    {
+      "endpoint": "/api/voice/stt",
+      "method": "POST",
+      "scenario": "Speech-to-text with fallback",
+      "expected_status": 200,
+      "actual_status": 200,
+      "passed": true,
+      "evidence": "{'success': False, 'text': '', 'error': 'Bhashini credentials are not configured on this server.', 'use_browser_speech': True}"
+    },
+    {
+      "endpoint": "/api/voice/translate",
+      "method": "POST",
+      "scenario": "Translation with fallback",
+      "expected_status": 200,
+      "actual_status": 200,
+      "passed": true,
+      "evidence": "{'success': False, 'translated_text': 'Hello', 'error': 'Bhashini credentials pending configuration.'}"
+    },
+    {
+      "endpoint": "/api/assistant/chat",
+      "method": "POST",
+      "scenario": "Grounded AI chat with citation",
+      "expected_status": 200,
+      "actual_status": 200,
+      "passed": true,
+      "evidence": "{'answer': '**Information from Verified Records (PM-KISAN (Pradhan Mantri Kisan Samman Nidhi))**\\n\\nScheme: PM-KISAN (Pradhan Mantri Kisan Samman Nidh"
+    },
+    {
+      "endpoint": "/api/feedback",
+      "method": "POST",
+      "scenario": "Submit citizen feedback",
+      "expected_status": [
+        200,
+        201
+      ],
+      "actual_status": 201,
+      "passed": true,
+      "evidence": "{'id': 2, 'user_id': None, 'category': 'general', 'scheme_slug': None, 'message': 'Audit test feedback verification', 'created_at': '2026-10-18T13:50:"
+    },
+    {
+      "endpoint": "/api/auth/me",
+      "method": "GET",
+      "scenario": "Unauthenticated profile access fails",
+      "expected_status": 401,
+      "actual_status": 401,
+      "passed": true,
+      "evidence": "{'detail': 'Could not validate authentication credentials. Please log in.'}"
+    },
+    {
+      "endpoint": "/api/applications",
+      "method": "GET",
+      "scenario": "Unauthenticated application drafts fails",
+      "expected_status": 401,
+      "actual_status": 401,
+      "passed": true,
+      "evidence": "{'detail': 'Could not validate authentication credentials. Please log in.'}"
+    },
+    {
+      "endpoint": "/api/admin/schemes",
+      "method": "GET",
+      "scenario": "Unauthenticated admin endpoint fails",
+      "expected_status": 401,
+      "actual_status": 401,
+      "passed": true,
+      "evidence": "{'detail': 'Could not validate authentication credentials. Please log in.'}"
+    },
+    {
+      "endpoint": "/api/auth/register",
+      "method": "POST",
+      "scenario": "Register new citizen account",
+      "expected_status": 200,
+      "actual_status": 200,
+      "passed": true,
+      "evidence": "{'access_token': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIzIiwicm9sZSI6ImNpdGl6ZW4iLCJleHAiOjE3OTI0MTc4NTAsImlhdCI6MTc5MjMzMTQ1MH0.OnctjcH-4kM"
+    },
+    {
+      "endpoint": "/api/auth/login",
+      "method": "POST",
+      "scenario": "Login with valid credentials",
+      "expected_status": 200,
+      "actual_status": 200,
+      "passed": true,
+      "evidence": "{'access_token': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIzIiwicm9sZSI6ImNpdGl6ZW4iLCJleHAiOjE3OTI0MTc4NTAsImlhdCI6MTc5MjMzMTQ1MH0.OnctjcH-4kM"
+    },
+    {
+      "endpoint": "/api/auth/me",
+      "method": "GET",
+      "scenario": "Get authenticated citizen profile",
+      "expected_status": 200,
+      "actual_status": 200,
+      "passed": true,
+      "evidence": "{'id': 3, 'full_name': 'Test Auditor Citizen', 'email': 'audit_citizen_1792331449@example.com', 'phone': '9812345678', 'role': 'citizen', 'preferred_l"
+    },
+    {
+      "endpoint": "/api/auth/me",
+      "method": "PUT",
+      "scenario": "Update citizen profile details",
+      "expected_status": 200,
+      "actual_status": 200,
+      "passed": true,
+      "evidence": "{'id': 3, 'full_name': 'Auditor Updated Name', 'email': 'audit_citizen_1792331449@example.com', 'phone': '9812345678', 'role': 'citizen', 'preferred_l"
+    },
+    {
+      "endpoint": "/api/eligibility/assess",
+      "method": "POST",
+      "scenario": "Evaluate eligibility with deterministic engine",
+      "expected_status": 200,
+      "actual_status": 200,
+      "passed": true,
+      "evidence": "{'scheme_id': 1, 'scheme_slug': 'pm-kisan', 'scheme_name': 'PM-KISAN (Pradhan Mantri Kisan Samman Nidhi)', 'status': 'possibly_eligible', 'summary_exp"
+    },
+    {
+      "endpoint": "/api/eligibility/history",
+      "method": "GET",
+      "scenario": "Fetch user assessment history",
+      "expected_status": 200,
+      "actual_status": 200,
+      "passed": true,
+      "evidence": "[{'id': 2, 'scheme_id': 1, 'scheme_name': 'PM-KISAN (Pradhan Mantri Kisan Samman Nidhi)', 'scheme_slug': 'pm-kisan', 'status': 'possibly_eligible', 'i"
+    },
+    {
+      "endpoint": "/api/eligibility/download-report",
+      "method": "POST",
+      "scenario": "Generate citizen eligibility PDF",
+      "expected_status": 200,
+      "actual_status": 200,
+      "passed": true,
+      "evidence": "Bytes/Non-JSON (3527 bytes)"
+    },
+    {
+      "endpoint": "/api/applications",
+      "method": "POST",
+      "scenario": "Create application draft",
+      "expected_status": 201,
+      "actual_status": 201,
+      "passed": true,
+      "evidence": "{'id': 2, 'user_id': 3, 'scheme_id': 2, 'title': 'PM Kisan Application Draft Audit', 'applicant_details': {'name': 'Auditor', 'land_survey_no': '123/4"
+    },
+    {
+      "endpoint": "/api/applications",
+      "method": "GET",
+      "scenario": "List user application drafts",
+      "expected_status": 200,
+      "actual_status": 200,
+      "passed": true,
+      "evidence": "[{'id': 2, 'user_id': 3, 'scheme_id': 2, 'title': 'PM Kisan Application Draft Audit', 'applicant_details': {'name': 'Auditor', 'land_survey_no': '123/"
+    },
+    {
+      "endpoint": "/api/applications/{draft_id}",
+      "method": "GET",
+      "scenario": "Get single application draft",
+      "expected_status": 200,
+      "actual_status": 200,
+      "passed": true,
+      "evidence": "{'id': 2, 'user_id': 3, 'scheme_id': 2, 'title': 'PM Kisan Application Draft Audit', 'applicant_details': {'name': 'Auditor', 'land_survey_no': '123/4"
+    },
+    {
+      "endpoint": "/api/applications/{draft_id}",
+      "method": "PUT",
+      "scenario": "Update application draft",
+      "expected_status": 200,
+      "actual_status": 200,
+      "passed": true,
+      "evidence": "{'id': 2, 'user_id': 3, 'scheme_id': 2, 'title': 'Updated Draft Title', 'applicant_details': {'name': 'Auditor', 'land_survey_no': '123/4'}, 'checklis"
+    },
+    {
+      "endpoint": "/api/applications/{draft_id}/pdf",
+      "method": "GET",
+      "scenario": "Download application summary PDF",
+      "expected_status": 200,
+      "actual_status": 200,
+      "passed": true,
+      "evidence": "Bytes/Non-JSON (3310 bytes)"
+    },
+    {
+      "endpoint": "/api/applications/{draft_id}",
+      "method": "DELETE",
+      "scenario": "Delete application draft",
+      "expected_status": 200,
+      "actual_status": 200,
+      "passed": true,
+      "evidence": "{'message': 'Draft deleted successfully.'}"
+    },
+    {
+      "endpoint": "/api/rti",
+      "method": "POST",
+      "scenario": "Create RTI petition draft",
+      "expected_status": 201,
+      "actual_status": 201,
+      "passed": true,
+      "evidence": "{'id': 1, 'user_id': 3, 'public_authority': 'Department of Agriculture', 'subject': 'Delay in PM-KISAN 16th Installment', 'information_requested': 'Pr"
+    },
+    {
+      "endpoint": "/api/rti",
+      "method": "GET",
+      "scenario": "List RTI drafts",
+      "expected_status": 200,
+      "actual_status": 200,
+      "passed": true,
+      "evidence": "[{'id': 1, 'user_id': 3, 'public_authority': 'Department of Agriculture', 'subject': 'Delay in PM-KISAN 16th Installment', 'information_requested': 'P"
+    },
+    {
+      "endpoint": "/api/rti/{draft_id}",
+      "method": "GET",
+      "scenario": "Get single RTI draft",
+      "expected_status": 200,
+      "actual_status": 200,
+      "passed": true,
+      "evidence": "{'id': 1, 'user_id': 3, 'public_authority': 'Department of Agriculture', 'subject': 'Delay in PM-KISAN 16th Installment', 'information_requested': 'Pr"
+    },
+    {
+      "endpoint": "/api/rti/{draft_id}",
+      "method": "PUT",
+      "scenario": "Update RTI draft",
+      "expected_status": 200,
+      "actual_status": 200,
+      "passed": true,
+      "evidence": "{'id': 1, 'user_id': 3, 'public_authority': 'Department of Agriculture', 'subject': 'Updated RTI Subject', 'information_requested': 'Provide official "
+    },
+    {
+      "endpoint": "/api/rti/{draft_id}/pdf",
+      "method": "GET",
+      "scenario": "Download RTI petition PDF",
+      "expected_status": 200,
+      "actual_status": 200,
+      "passed": true,
+      "evidence": "Bytes/Non-JSON (2763 bytes)"
+    },
+    {
+      "endpoint": "/api/rti/{draft_id}",
+      "method": "DELETE",
+      "scenario": "Delete RTI draft",
+      "expected_status": 200,
+      "actual_status": 200,
+      "passed": true,
+      "evidence": "{'message': 'RTI draft deleted successfully.'}"
+    },
+    {
+      "endpoint": "/api/grievances",
+      "method": "POST",
+      "scenario": "Create Grievance representation draft",
+      "expected_status": 201,
+      "actual_status": 201,
+      "passed": true,
+      "evidence": "{'id': 1, 'user_id': 3, 'department': 'Revenue and Land Records', 'category': 'Land Record Verification Delay', 'description': 'Patta mutation certifi"
+    },
+    {
+      "endpoint": "/api/grievances",
+      "method": "GET",
+      "scenario": "List Grievance drafts",
+      "expected_status": 200,
+      "actual_status": 200,
+      "passed": true,
+      "evidence": "[{'id': 1, 'user_id': 3, 'department': 'Revenue and Land Records', 'category': 'Land Record Verification Delay', 'description': 'Patta mutation certif"
+    },
+    {
+      "endpoint": "/api/grievances/{draft_id}",
+      "method": "GET",
+      "scenario": "Get single Grievance draft",
+      "expected_status": 200,
+      "actual_status": 200,
+      "passed": true,
+      "evidence": "{'id': 1, 'user_id': 3, 'department': 'Revenue and Land Records', 'category': 'Land Record Verification Delay', 'description': 'Patta mutation certifi"
+    },
+    {
+      "endpoint": "/api/grievances/{draft_id}",
+      "method": "PUT",
+      "scenario": "Update Grievance draft",
+      "expected_status": 200,
+      "actual_status": 200,
+      "passed": true,
+      "evidence": "{'id': 1, 'user_id': 3, 'department': 'Revenue and Land Records', 'category': 'Land Record Verification Delay', 'description': 'Updated Grievance Desc"
+    },
+    {
+      "endpoint": "/api/grievances/{draft_id}/pdf",
+      "method": "GET",
+      "scenario": "Download Grievance representation PDF",
+      "expected_status": 200,
+      "actual_status": 200,
+      "passed": true,
+      "evidence": "Bytes/Non-JSON (2543 bytes)"
+    },
+    {
+      "endpoint": "/api/grievances/{draft_id}",
+      "method": "DELETE",
+      "scenario": "Delete Grievance draft",
+      "expected_status": 200,
+      "actual_status": 200,
+      "passed": true,
+      "evidence": "{'message': 'Grievance draft deleted successfully.'}"
+    },
+    {
+      "endpoint": "/api/dashboard/saved-schemes/{scheme_id}",
+      "method": "POST",
+      "scenario": "Toggle bookmark scheme (Save)",
+      "expected_status": 200,
+      "actual_status": 200,
+      "passed": true,
+      "evidence": "{'saved': True, 'message': 'Scheme saved to your citizen dashboard.'}"
+    },
+    {
+      "endpoint": "/api/dashboard/saved-schemes",
+      "method": "GET",
+      "scenario": "Get saved schemes",
+      "expected_status": 200,
+      "actual_status": 200,
+      "passed": true,
+      "evidence": "[{'saved_id': 2, 'scheme_id': 2, 'slug': 'pmay-g', 'name': 'Pradhan Mantri Awaas Yojana - Gramin (PMAY-G)', 'name_hi': '\u092a\u094d\u0930\u0927\u093e\u0928\u092e\u0902\u0924\u094d\u0930\u0940 \u0906\u0935\u093e\u0938 \u092f\u094b\u091c\u0928\u093e - \u0917\u094d\u0930\u093e"
+    },
+    {
+      "endpoint": "/api/dashboard/stats",
+      "method": "GET",
+      "scenario": "Get citizen dashboard statistics",
+      "expected_status": 200,
+      "actual_status": 200,
+      "passed": true,
+      "evidence": "{'saved_schemes_count': 1, 'application_drafts_count': 0, 'rti_drafts_count': 0, 'grievance_drafts_count': 0, 'assessments_count': 1, 'recent_assessme"
+    },
+    {
+      "endpoint": "/api/dashboard/saved-schemes/{scheme_id}",
+      "method": "POST",
+      "scenario": "Toggle bookmark scheme (Unsave)",
+      "expected_status": 200,
+      "actual_status": 200,
+      "passed": true,
+      "evidence": "{'saved': False, 'message': 'Scheme removed from saved list.'}"
+    },
+    {
+      "endpoint": "/api/auth/login",
+      "method": "POST",
+      "scenario": "Admin authentication",
+      "expected_status": 200,
+      "actual_status": 200,
+      "passed": true,
+      "evidence": "{'access_token': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwicm9sZSI6ImFkbWluIiwiZXhwIjoxNzkyNDE3ODU1LCJpYXQiOjE3OTIzMzE0NTV9.G8EudSQL47NPQf"
+    },
+    {
+      "endpoint": "/api/admin/schemes",
+      "method": "GET",
+      "scenario": "Admin list all schemes",
+      "expected_status": 200,
+      "actual_status": 200,
+      "passed": true,
+      "evidence": "[{'id': 2, 'slug': 'pmay-g', 'name': 'Pradhan Mantri Awaas Yojana - Gramin (PMAY-G)', 'name_hi': '\u092a\u094d\u0930\u0927\u093e\u0928\u092e\u0902\u0924\u094d\u0930\u0940 \u0906\u0935\u093e\u0938 \u092f\u094b\u091c\u0928\u093e - \u0917\u094d\u0930\u093e\u092e\u0940\u0923 (\u092a\u0940\u090f\u092e\u090f\u0935\u093e\u0908-\u091c\u0940)', 's"
+    },
+    {
+      "endpoint": "/api/admin/schemes/{scheme_id}/verify",
+      "method": "PUT",
+      "scenario": "Admin update scheme verification status",
+      "expected_status": 200,
+      "actual_status": 200,
+      "passed": true,
+      "evidence": "{'id': 2, 'slug': 'pmay-g', 'name': 'Pradhan Mantri Awaas Yojana - Gramin (PMAY-G)', 'name_hi': '\u092a\u094d\u0930\u0927\u093e\u0928\u092e\u0902\u0924\u094d\u0930\u0940 \u0906\u0935\u093e\u0938 \u092f\u094b\u091c\u0928\u093e - \u0917\u094d\u0930\u093e\u092e\u0940\u0923 (\u092a\u0940\u090f\u092e\u090f\u0935\u093e\u0908-\u091c\u0940)', 'su"
+    },
+    {
+      "endpoint": "/api/admin/audit-logs",
+      "method": "GET",
+      "scenario": "Admin get audit logs",
+      "expected_status": 200,
+      "actual_status": 200,
+      "passed": true,
+      "evidence": "[{'admin_id': 1, 'id': 2, 'action': 'update_scheme_verification', 'target_id': '2', 'created_at': '2026-10-18T13:50:55.827775', 'target_type': 'scheme"
+    },
+    {
+      "endpoint": "/api/admin/feedbacks",
+      "method": "GET",
+      "scenario": "Admin get citizen feedbacks",
+      "expected_status": 200,
+      "actual_status": 200,
+      "passed": true,
+      "evidence": "[{'category': 'general', 'message': 'Audit test feedback verification', 'user_id': None, 'id': 2, 'scheme_slug': None, 'created_at': '2026-10-18T13:50"
+    },
+    {
+      "endpoint": "/api/auth/me",
+      "method": "DELETE",
+      "scenario": "Citizen account permanent deletion",
+      "expected_status": 200,
+      "actual_status": 200,
+      "passed": true,
+      "evidence": "{'message': 'Your account and all associated personal records have been permanently deleted.'}"
+    },
+    {
+      "endpoint": "/api/auth/login",
+      "method": "POST",
+      "scenario": "Deleted citizen cannot log in",
+      "expected_status": 401,
+      "actual_status": 401,
+      "passed": true,
+      "evidence": "{'detail': 'Invalid email or password. Please verify your credentials.'}"
+    }
+  ]
+}

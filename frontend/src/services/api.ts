@@ -251,6 +251,10 @@ class ApiClient {
   adminGetAuditLogs() {
     return this.request<any[]>('/admin/audit-logs');
   }
+
+  adminGetFeedbacks() {
+    return this.request<any[]>('/admin/feedbacks');
+  }
 }
 
 export const api = new ApiClient();
