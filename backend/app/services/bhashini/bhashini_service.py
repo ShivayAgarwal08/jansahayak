@@ -87,21 +87,98 @@ class BhashiniService:
                     return {
                         "success": True,
                         "text": recognized_text,
-                        "language": language_code
+                        "language": language_code,
+                        "provider": "bhashini",
+                        "is_bhashini_live": True
                     }
                 else:
                     return {
                         "success": False,
                         "text": "",
                         "error": f"Bhashini ASR returned HTTP {response.status_code}",
-                        "use_browser_speech": True
+                        "use_browser_speech": True,
+                        "provider": "bhashini_error"
                     }
         except Exception as e:
             return {
                 "success": False,
                 "text": "",
                 "error": f"ASR connection error: {str(e)}",
-                "use_browser_speech": True
+                "use_browser_speech": True,
+                "provider": "bhashini_error"
+            }
+
+    async def text_to_speech(
+        self,
+        text: str,
+        language_code: str,
+        gender: str = "female"
+    ) -> Dict[str, Any]:
+        """
+        Perform Text-to-Speech (TTS) via Bhashini API.
+        Returns base64 encoded audio or honest fallback recommendation.
+        """
+        if not self.user_id or not self.api_key:
+            return {
+                "success": False,
+                "audio_base64": "",
+                "error": "Bhashini credentials are not configured on this server.",
+                "use_browser_speech": True,
+                "provider": "browser_fallback"
+            }
+
+        try:
+            payload = {
+                "pipelineTasks": [
+                    {
+                        "taskType": "tts",
+                        "config": {
+                            "language": {"sourceLanguage": language_code},
+                            "gender": gender,
+                            "samplingRate": 8000
+                        }
+                    }
+                ],
+                "inputData": {
+                    "input": [{"source": text}]
+                }
+            }
+
+            async with httpx.AsyncClient(timeout=15.0) as client:
+                response = await client.post(
+                    self.pipeline_endpoint,
+                    headers={
+                        "userID": self.user_id,
+                        "ulcaApiKey": self.api_key,
+                        "Content-Type": "application/json"
+                    },
+                    json=payload
+                )
+                if response.status_code == 200:
+                    data = response.json()
+                    audio_content = data["pipelineResponse"][0]["audio"][0]["audioContent"]
+                    return {
+                        "success": True,
+                        "audio_base64": audio_content,
+                        "language": language_code,
+                        "provider": "bhashini",
+                        "is_bhashini_live": True
+                    }
+                else:
+                    return {
+                        "success": False,
+                        "audio_base64": "",
+                        "error": f"Bhashini TTS returned HTTP {response.status_code}",
+                        "use_browser_speech": True,
+                        "provider": "bhashini_error"
+                    }
+        except Exception as e:
+            return {
+                "success": False,
+                "audio_base64": "",
+                "error": f"TTS connection error: {str(e)}",
+                "use_browser_speech": True,
+                "provider": "bhashini_error"
             }
 
     async def translate_text(self, text: str, source_lang: str, target_lang: str) -> Dict[str, Any]:

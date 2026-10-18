@@ -22,6 +22,7 @@ from app.api.grievances import router as grievances_router
 from app.api.dashboard import router as dashboard_router
 from app.api.feedback import router as feedback_router
 from app.api.admin import router as admin_router
+from app.api.whatsapp import router as whatsapp_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -85,6 +86,7 @@ app.include_router(grievances_router, prefix=api_prefix)
 app.include_router(dashboard_router, prefix=api_prefix)
 app.include_router(feedback_router, prefix=api_prefix)
 app.include_router(admin_router, prefix=api_prefix)
+app.include_router(whatsapp_router, prefix=api_prefix)
 
 @app.get("/")
 def root():

@@ -149,6 +149,20 @@ class ApiClient {
     return this.request<any[]>('/voice/languages');
   }
 
+  speechToText(audioBase64: string, languageCode: string = 'hi') {
+    return this.request<any>('/voice/stt', {
+      method: 'POST',
+      body: JSON.stringify({ audio_base64: audioBase64, language_code: languageCode })
+    });
+  }
+
+  textToSpeech(text: string, languageCode: string = 'hi', gender: string = 'female') {
+    return this.request<any>('/voice/tts', {
+      method: 'POST',
+      body: JSON.stringify({ text, language_code: languageCode, gender })
+    });
+  }
+
   // --- Applications ---
   getApplicationDrafts() {
     return this.request<any[]>('/applications');

@@ -38,6 +38,13 @@ class Settings(BaseSettings):
         "https://dhruva-api.bhashini.gov.in/services/inference/pipeline"
     )
 
+    # Meta WhatsApp Cloud API
+    WHATSAPP_VERIFY_TOKEN: Optional[str] = os.getenv("WHATSAPP_VERIFY_TOKEN", None)
+    WHATSAPP_ACCESS_TOKEN: Optional[str] = os.getenv("WHATSAPP_ACCESS_TOKEN", None)
+    WHATSAPP_PHONE_NUMBER_ID: Optional[str] = os.getenv("WHATSAPP_PHONE_NUMBER_ID", None)
+    WHATSAPP_APP_SECRET: Optional[str] = os.getenv("WHATSAPP_APP_SECRET", None)
+    WHATSAPP_API_URL: str = os.getenv("WHATSAPP_API_URL", "https://graph.facebook.com/v19.0")
+
     class Config:
         env_file = ".env"
         case_sensitive = True

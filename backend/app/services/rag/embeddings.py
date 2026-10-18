@@ -33,9 +33,15 @@ CIVIC_SEMANTIC_ANCHORS = [
 
 def generate_embedding(text: str, dim: int = EMBEDDING_DIM) -> List[float]:
     """
-    Generate a deterministic, L2-normalized dense embedding vector (128 dimensions).
-    Uses semantic anchor projection, character/subword hashing, and term weighting.
-    Runs with sub-millisecond latency, zero memory leaks, and zero heavy dependencies.
+    Generate an engineered, deterministic, L2-normalized dense vector embedding (128 dimensions).
+
+    TECHNICAL NOTE & HONEST DISCLOSURE:
+    This is an engineered civic-domain vector generator utilizing semantic concept anchor projections
+    and subword hash dispersion with cosine distance. It is NOT a pre-trained neural transformer model
+    (such as BGE, MiniLM, or OpenAI text-embedding-ada-002) and should not be labeled as transformer-grade.
+    It was specifically designed for production deployment on memory-constrained infrastructure
+    (Render 512MB RAM free tier ceiling), ensuring deterministic sub-millisecond execution,
+    zero memory leaks, and 100% compatibility across PostgreSQL and SQLite without heavy PyTorch dependencies.
     """
     if not text or not text.strip():
         return [0.0] * dim
