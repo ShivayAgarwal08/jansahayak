@@ -14,17 +14,17 @@ EMBEDDING_DIM = 128
 # Core Indian civic domain concepts projected into high-signal subspace
 CIVIC_SEMANTIC_ANCHORS = [
     # 0-15: Agriculture, landholding, irrigation, crops
-    ["farmer", "kisan", "krishi", "agriculture", "land", "landholding", "cultivable", "bigha", "acre", "crop", "patta", "khatauni", "harvest", "seed", "fertilizer", "soil"],
+    ["farmer", "kisan", "krishi", "agriculture", "land", "landholding", "cultivable", "bigha", "acre", "crop", "patta", "khatauni", "harvest", "seed", "fertilizer", "soil", "khet", "kheti", "fasal"],
     # 16-31: Rural housing, shelter, construction, PMAY
-    ["housing", "house", "shelter", "kutcha", "pucca", "awas", "gramin", "dilapidated", "dwelling", "roof", "room", "homeless", "construction", "sanitation", "toilet", "tap"],
+    ["housing", "house", "shelter", "kutcha", "pucca", "awas", "gramin", "dilapidated", "dwelling", "roof", "room", "homeless", "construction", "sanitation", "toilet", "tap", "kachha", "pakka", "makan", "ghar"],
     # 32-47: Health, hospitalization, insurance, medical
-    ["health", "hospital", "hospitalization", "medical", "treatment", "doctor", "illness", "surgery", "ayushman", "golden card", "healthcare", "medicine", "cashless", "clinic", "tertiary", "secondary"],
+    ["health", "hospital", "hospitalization", "medical", "treatment", "doctor", "illness", "surgery", "ayushman", "golden card", "healthcare", "medicine", "cashless", "clinic", "tertiary", "secondary", "ilaj", "70 saal"],
     # 48-63: Maternal, pregnancy, child welfare, infant nutrition
-    ["pregnant", "pregnancy", "maternity", "lactating", "delivery", "infant", "mother", "matru", "vandana", "first child", "girl child", "daughter", "sukanya", "samriddhi", "nutrition", "immunization"],
+    ["pregnant", "pregnancy", "maternity", "lactating", "delivery", "infant", "mother", "matru", "vandana", "first child", "girl child", "daughter", "sukanya", "samriddhi", "nutrition", "immunization", "garbhavati", "mahila", "bacche"],
     # 64-79: Social security pensions, elderly, disability, destitution
-    ["pension", "elderly", "senior", "senior citizen", "old age", "vridha", "destitute", "widow", "disability", "divyang", "social security", "annuity", "retirement", "pensioner", "nsap", "dbt"],
+    ["pension", "elderly", "senior", "senior citizen", "old age", "vridha", "destitute", "widow", "disability", "divyang", "social security", "annuity", "retirement", "pensioner", "nsap", "dbt", "buzurg", "dadi"],
     # 80-95: Street vendors, micro-credit, urban livelihoods, collateral
-    ["vendor", "street vendor", "hawker", "thela", "rehri", "svanidhi", "micro credit", "working capital", "collateral", "loan", "tranche", "urban", "footpath", "interest subsidy", "cashback", "digital"],
+    ["vendor", "street vendor", "hawker", "thela", "rehri", "svanidhi", "micro credit", "working capital", "collateral", "loan", "tranche", "urban", "footpath", "interest subsidy", "cashback", "digital", "sadak", "patri"],
     # 96-111: Artisans, traditional crafts, toolkit, Vishwakarma
     ["artisan", "vishwakarma", "carpenter", "blacksmith", "goldsmith", "potter", "mason", "tailor", "barber", "craftsperson", "traditional craft", "tool kit", "skilling", "stipend", "cobbler", "sculptor", "pottery", "clay", "handicraft", "kumhaar", "lohar"],
     # 112-127: Governance, verification, exclusions, eligibility, Aadhaar, portals

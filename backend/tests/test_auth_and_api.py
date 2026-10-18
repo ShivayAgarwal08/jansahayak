@@ -144,6 +144,14 @@ def test_citizen_data_isolation():
     delete_b = client.delete(f"/api/applications/{draft_id}", headers={"Authorization": f"Bearer {token_b}"})
     assert delete_b.status_code == 404
 
+    # User A can download the PDF, but User B gets 404
+    pdf_a = client.get(f"/api/applications/{draft_id}/pdf", headers={"Authorization": f"Bearer {token_a}"})
+    assert pdf_a.status_code == 200
+    assert pdf_a.content.startswith(b"%PDF")
+
+    pdf_b = client.get(f"/api/applications/{draft_id}/pdf", headers={"Authorization": f"Bearer {token_b}"})
+    assert pdf_b.status_code == 404
+
 def test_pdf_generators():
     report_pdf = generate_citizen_report_pdf(
         citizen_name="Anita Devi",

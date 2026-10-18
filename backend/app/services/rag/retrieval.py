@@ -57,40 +57,48 @@ QUERY_INTENTS = {
     }
 }
 
+# Scam, giveaway, and out-of-scope indicators to ensure reliable abstention (zero false positives)
+SCAM_OR_UNRELATED_INDICATORS = {
+    "lottery", "giveaway", "cash giveaway", "free smartphone", "gold iphone", "free iphone",
+    "free gold", "cryptocurrency", "crypto", "bitcoin", "helicopter",
+    "cricket match", "cricket score", "bake a cake", "chocolate cake", "flight ticket",
+    "nullpointerexception", "python programming", "switzerland"
+}
+
 # Domain Intent Mappings with high-precision keywords
 DOMAIN_INTENTS = {
     "pm-kisan": {
-        "keywords": {"farmer", "farmers", "farming", "kisan", "krishi", "land", "landholding", "cultivable", "cultivator", "bigha", "bighas", "acre", "acres", "agriculture", "agricultural", "pm-kisan", "pmkisan"},
+        "keywords": {"farmer", "farmers", "farming", "kisan", "krishi", "land", "landholding", "cultivable", "cultivator", "bigha", "bighas", "acre", "acres", "agriculture", "agricultural", "pm-kisan", "pmkisan", "khet", "kheti", "fasal", "krishak", "6000 rupaye", "kisaan", "samman nidhy"},
         "boost": 25,
         "reason": "Matched agricultural & farmer landholding criteria"
     },
     "pmay-g": {
-        "keywords": {"housing", "house", "shelter", "kutcha", "pucca", "dilapidated", "awas", "gramin", "houseless", "roof", "room", "rural housing", "pmay", "pmay-g", "pmayg", "awas yojana"},
+        "keywords": {"housing", "house", "shelter", "kutcha", "pucca", "dilapidated", "awas", "gramin", "houseless", "roof", "room", "rural housing", "pmay", "pmay-g", "pmayg", "awas yojana", "kachha", "pakka", "makan", "ghar", "gaon", "chhat", "aawas"},
         "boost": 25,
         "reason": "Matched rural housing & dwelling condition criteria"
     },
     "ayushman-bharat-pmjay": {
-        "keywords": {"health", "hospital", "hospitalization", "medical", "treatment", "doctor", "illness", "surgery", "ayushman", "golden card", "5 lakh", "pmjay", "pm-jay", "healthcare"},
+        "keywords": {"health", "hospital", "hospitalization", "medical", "treatment", "doctor", "illness", "surgery", "ayushman", "golden card", "5 lakh", "pmjay", "pm-jay", "healthcare", "ilaj", "dawa", "bimar", "bimari", "70 saal", "70 years", "aayushman", "pmjaay"},
         "boost": 25,
         "reason": "Matched health & secondary/tertiary hospital coverage criteria"
     },
     "pmmvy": {
-        "keywords": {"pregnant", "pregnancy", "maternity", "lactating", "delivery", "infant", "mother", "matru", "vandana", "first child", "institutional delivery", "pmmvy"},
+        "keywords": {"pregnant", "pregnancy", "maternity", "lactating", "delivery", "infant", "mother", "matru", "vandana", "first child", "institutional delivery", "pmmvy", "garbhavati", "mahila", "prasuti", "baccha", "bacche", "janm", "pmmvi"},
         "boost": 25,
         "reason": "Matched maternal health & pregnancy assistance criteria"
     },
     "ignoaps": {
-        "keywords": {"pension", "elderly", "senior", "senior citizen", "old age", "vridha", "60 years", "old", "destitute pension", "ignoaps", "nsap"},
+        "keywords": {"pension", "elderly", "senior", "senior citizen", "old age", "vridha", "60 years", "old", "destitute pension", "ignoaps", "nsap", "buzurg", "dadi", "dada"},
         "boost": 25,
         "reason": "Matched senior citizen social security pension criteria"
     },
     "sukanya-samriddhi-yojana": {
-        "keywords": {"girl child", "daughter", "sukanya", "samriddhi", "girl", "beti", "under 10", "child education", "ssy"},
+        "keywords": {"girl child", "daughter", "sukanya", "samriddhi", "girl", "beti", "under 10", "child education", "ssy", "kanya", "chhoti", "samridhi"},
         "boost": 25,
         "reason": "Matched girl child savings & education welfare criteria"
     },
     "pm-svanidhi": {
-        "keywords": {"vendor", "street vendor", "hawker", "thela", "rehri", "svanidhi", "micro credit", "working capital", "footpath", "pm-svanidhi", "handcart", "cart", "vegetable vendor", "fruit vendor"},
+        "keywords": {"vendor", "street vendor", "hawker", "thela", "rehri", "svanidhi", "micro credit", "working capital", "footpath", "pm-svanidhi", "handcart", "cart", "vegetable vendor", "fruit vendor", "sadak", "patri", "phal", "chai", "svanidi"},
         "boost": 25,
         "reason": "Matched urban street vendor micro-credit criteria"
     },
@@ -229,13 +237,17 @@ def retrieve_grounded_passages(
     If no document chunks are present in DB, falls back gracefully to structured scheme definitions.
     Prevents false-positive ranking of maternal or pension schemes due to generic numbers.
     """
+    query_str_lower = query.lower()
+    # Immediate abstention for explicit scam, lottery, giveaway, and off-topic queries
+    if any(scam in query_str_lower for scam in SCAM_OR_UNRELATED_INDICATORS):
+        return []
+
     # Tokenize and filter stopwords
-    raw_tokens = re.findall(r"\w+", query.lower())
+    raw_tokens = re.findall(r"\w+", query_str_lower)
     meaningful_tokens = [w for w in raw_tokens if len(w) > 2 and w not in STOPWORDS]
 
     # Detect domain intents in user query
     matched_domains: Dict[str, List[str]] = {}
-    query_str_lower = query.lower()
     for slug, intent_data in DOMAIN_INTENTS.items():
         matched_kws = [kw for kw in intent_data["keywords"] if re.search(rf"\b{re.escape(kw)}\b", query_str_lower)]
         if matched_kws:
