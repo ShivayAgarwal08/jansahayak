@@ -130,9 +130,19 @@ def test_citizen_data_isolation():
     assert view_a.status_code == 200
     assert view_a.json()["title"] == "Citizen A PM-KISAN Prep"
 
-    # User B MUST NOT be able to view User A's draft (Data Isolation check)
+    # User B MUST NOT be able to view, update, or delete User A's draft (Data Isolation check)
     view_b = client.get(f"/api/applications/{draft_id}", headers={"Authorization": f"Bearer {token_b}"})
     assert view_b.status_code == 404
+
+    update_b = client.put(
+        f"/api/applications/{draft_id}",
+        headers={"Authorization": f"Bearer {token_b}"},
+        json={"title": "Hacked Title"}
+    )
+    assert update_b.status_code == 404
+
+    delete_b = client.delete(f"/api/applications/{draft_id}", headers={"Authorization": f"Bearer {token_b}"})
+    assert delete_b.status_code == 404
 
 def test_pdf_generators():
     report_pdf = generate_citizen_report_pdf(

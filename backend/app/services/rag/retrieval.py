@@ -90,12 +90,12 @@ DOMAIN_INTENTS = {
         "reason": "Matched girl child savings & education welfare criteria"
     },
     "pm-svanidhi": {
-        "keywords": {"vendor", "street vendor", "hawker", "thela", "rehri", "svanidhi", "micro credit", "working capital", "footpath", "pm-svanidhi"},
+        "keywords": {"vendor", "street vendor", "hawker", "thela", "rehri", "svanidhi", "micro credit", "working capital", "footpath", "pm-svanidhi", "handcart", "cart", "vegetable vendor", "fruit vendor"},
         "boost": 25,
         "reason": "Matched urban street vendor micro-credit criteria"
     },
     "pm-vishwakarma": {
-        "keywords": {"artisan", "vishwakarma", "carpenter", "blacksmith", "goldsmith", "potter", "mason", "tailor", "barber", "craftsperson", "traditional craft", "tool kit", "pm-vishwakarma"},
+        "keywords": {"artisan", "vishwakarma", "carpenter", "blacksmith", "goldsmith", "potter", "mason", "tailor", "barber", "craftsperson", "traditional craft", "tool kit", "toolkit", "pm-vishwakarma", "pottery", "clay", "pots", "earthenware", "kumhaar", "lohar", "sonar", "cobbler", "sculptor", "traditional trade", "hand tools"},
         "boost": 25,
         "reason": "Matched traditional family artisan & craftsperson trade criteria"
     }

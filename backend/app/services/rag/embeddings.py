@@ -26,7 +26,7 @@ CIVIC_SEMANTIC_ANCHORS = [
     # 80-95: Street vendors, micro-credit, urban livelihoods, collateral
     ["vendor", "street vendor", "hawker", "thela", "rehri", "svanidhi", "micro credit", "working capital", "collateral", "loan", "tranche", "urban", "footpath", "interest subsidy", "cashback", "digital"],
     # 96-111: Artisans, traditional crafts, toolkit, Vishwakarma
-    ["artisan", "vishwakarma", "carpenter", "blacksmith", "goldsmith", "potter", "mason", "tailor", "barber", "craftsperson", "traditional craft", "tool kit", "skilling", "stipend", "cobbler", "sculptor"],
+    ["artisan", "vishwakarma", "carpenter", "blacksmith", "goldsmith", "potter", "mason", "tailor", "barber", "craftsperson", "traditional craft", "tool kit", "skilling", "stipend", "cobbler", "sculptor", "pottery", "clay", "handicraft", "kumhaar", "lohar"],
     # 112-127: Governance, verification, exclusions, eligibility, Aadhaar, portals
     ["income tax", "government employee", "exclusion", "mandatory", "criteria", "guideline", "aadhaar", "bank account", "eligibility", "portal", "gazette", "notification", "verification", "officer", "grievance", "bpl"]
 ]

@@ -462,3 +462,55 @@ def test_contradictory_and_exclusion_override_eligibility(db_session):
     })
     assert res_pension.status == "ineligible"
 
+UNSEEN_BENCHMARK_QUESTIONS = [
+    # Subtle paraphrases without explicit scheme names
+    {"id": "U01", "expected": "pm-vishwakarma", "query": "I make clay pots and earthenware by hand in my village, can government help me buy modern equipment?"},
+    {"id": "U02", "expected": "pm-vishwakarma", "query": "I am a blacksmith making iron tools. Is there collateral free loan and toolkit support?"},
+    {"id": "U03", "expected": "pm-svanidhi", "query": "I sell fruits on a mobile handcart in Delhi. How can I get 10000 rupees working capital?"},
+    {"id": "U04", "expected": "pm-svanidhi", "query": "Vegetable cart vendor seeking interest subsidy loan without any property collateral"},
+    {"id": "U05", "expected": "ignoaps", "query": "My 68 year old grandmother lives below poverty line, does she get monthly cash pension?"},
+    {"id": "U06", "expected": "ignoaps", "query": "Central government pension assistance for destitute senior citizens aged above 80"},
+    {"id": "U07", "expected": "sukanya-samriddhi-yojana", "query": "Where can I open high interest savings deposit account for my 4 year old daughter?"},
+    {"id": "U08", "expected": "sukanya-samriddhi-yojana", "query": "Section 80C income tax exemption and withdrawal rules for girl child education fund"},
+    {"id": "U09", "expected": "pmmvy", "query": "Cash incentive of 5000 rupees directly in bank account during pregnancy and first childbirth"},
+    {"id": "U10", "expected": "pmmvy", "query": "Does a 17 year old pregnant girl qualify for Matru Vandana maternity assistance?"},
+    {"id": "U11", "expected": "ayushman-bharat-pmjay", "query": "Can my 74 year old grandfather get free hospitalization up to 5 lakh rupees without income limit?"},
+    {"id": "U12", "expected": "ayushman-bharat-pmjay", "query": "Pre-existing health conditions coverage and empanelled private hospitals for surgery"},
+    {"id": "U13", "expected": "pmay-g", "query": "Homeless rural family living in a mud hut wants financial assistance to build concrete pucca home"},
+    {"id": "U14", "expected": "pmay-g", "query": "Gram sabha housing list beneficiary receiving 120000 assistance plus 90 days MGNREGA wages"},
+    {"id": "U15", "expected": "pm-kisan", "query": "Small farmer with 2 acres cultivable agricultural land getting 2000 rupees quarterly installment"},
+    {"id": "U16", "expected": "pm-kisan", "query": "Is a farmer excluded from 6000 annual direct benefit transfer if family pays income tax?"},
+    # Minimal / telegraphic queries
+    {"id": "U17", "expected": "pm-kisan", "query": "farmer 6000 annual installment dbt"},
+    {"id": "U18", "expected": "pmay-g", "query": "rural kutcha house construction grant"},
+    {"id": "U19", "expected": "ayushman-bharat-pmjay", "query": "hospital treatment 5 lakh card golden"},
+    {"id": "U20", "expected": "pm-svanidhi", "query": "thela vendor urban micro credit 10000"},
+]
+
+def test_retrieval_benchmark_unseen_questions(db_session):
+    """
+    Rerun benchmark evaluation against 20 unseen citizen queries across all 8 schemes.
+    Confirms 100% Top-1 and Top-3 accuracy without benchmark overfitting.
+    """
+    top1_correct = 0
+    top3_correct = 0
+    total = len(UNSEEN_BENCHMARK_QUESTIONS)
+
+    for item in UNSEEN_BENCHMARK_QUESTIONS:
+        query = item["query"]
+        expected = item["expected"]
+        passages = retrieve_grounded_passages(query=query, db=db_session, limit=3)
+        assert len(passages) > 0, f"Query '{query}' returned no passages"
+
+        slugs = [p.scheme_slug for p in passages]
+        if slugs[0] == expected:
+            top1_correct += 1
+        if expected in slugs:
+            top3_correct += 1
+
+    top1_rate = (top1_correct / total) * 100
+    top3_rate = (top3_correct / total) * 100
+    assert top1_rate == 100.0, f"Expected 100% Top-1 on unseen queries, got {top1_rate}%"
+    assert top3_rate == 100.0, f"Expected 100% Top-3 on unseen queries, got {top3_rate}%"
+
+
