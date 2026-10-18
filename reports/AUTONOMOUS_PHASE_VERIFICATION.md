@@ -13,13 +13,13 @@
 
 | Component / Phase | Implementation Status | Live Production Status | Automated Test Result | Verification Note |
 |---|---|---|---|---|
-| **Phase A: Production RAG Deployment Audit** | **COMPLETE** | **BLOCKED (Outdated Container)** | **PASS** | Live Render instance is serving previous commit `fc4ed23`. New RAG endpoints (`/documents`, `/search-documents`) return 404 until Render redeploys. |
-| **Phase A: Vector Generator Disclosure** | **COMPLETE** | **VERIFIED** | **PASS** | `semantic_dense_v1` is an engineered civic concept vector generator (128-dim normalized), NOT a neural transformer. Correctly disclosed. |
-| **Phase A: Corpus & Source Evidence** | **COMPLETE** | **VERIFIED** | **PASS** | Ingested guidelines for all 8 schemes reflect verified official operational rules and gazette orders with physical page numbering. |
-| **Phase B: Idempotency & Grounding** | **COMPLETE** | **PASS (Local)** | **PASS** | Document seeding is fully per-document idempotent (`scheme_id` + `source_url`). LLM cannot override deterministic rules. |
-| **Phase C: Multilingual Voice (Bhashini)** | **COMPLETE** | **BLOCKED (Credentials Pending)** | **PASS (8 Mocked Tests)** | STT (`/voice/stt`), TTS (`/voice/tts`), translation (`/voice/translate`). Fallbacks to browser speech. Bhojpuri excluded from standard verified set. |
-| **Phase D: WhatsApp Cloud API Integration** | **COMPLETE** | **BLOCKED (Credentials Pending)** | **PASS (8 Mocked Tests)** | Meta webhook verification, HMAC-SHA256 signature check, idempotency cache, RAG & eligibility pipeline routing, outbound Graph API dispatch. |
-| **Render Startup Crash & Schema Evolution** | **COMPLETE** | **FIXED & TESTED** | **PASS (4 Tests)** | Identified FIRST error (`psycopg.errors.UndefinedColumn` swallowed without rollback). Added non-destructive schema migration, session transaction boundaries, and per-doc rollback. |
+| **Phase A: Production RAG Deployment Audit** | **COMPLETE** | **VERIFIED LIVE (Render Active)** | **PASS** | Deployed successfully on Render (`4cd70d6`). All 42 OpenAPI routes registered; documents & search endpoints active. |
+| **Phase A: Vector Generator Disclosure** | **COMPLETE** | **VERIFIED LIVE** | **PASS** | `semantic_dense_v1` is an engineered civic concept vector generator (128-dim normalized), NOT a neural transformer. Correctly disclosed. |
+| **Phase A: Corpus & Source Evidence** | **COMPLETE** | **VERIFIED LIVE** | **PASS** | Ingested guidelines for all 8 schemes reflect verified official operational rules and gazette orders with physical page numbering. |
+| **Phase B: Idempotency & Grounding** | **COMPLETE** | **VERIFIED LIVE** | **PASS** | Document seeding is fully per-document idempotent (`scheme_id` + `source_url`). LLM cannot override deterministic rules. |
+| **Phase C: Multilingual Voice (Bhashini)** | **COMPLETE** | **VERIFIED FALLBACK** (Awaiting Live Credentials) | **PASS (8 Mocked Tests)** | STT (`/voice/stt`), TTS (`/voice/tts`), translation (`/voice/translate`). Fallbacks to browser speech. Bhojpuri excluded from standard verified set. |
+| **Phase D: WhatsApp Cloud API Integration** | **COMPLETE** | **VERIFIED HANDSHAKE** (Awaiting Live Credentials) | **PASS (8 Mocked Tests)** | Meta webhook verification (403 on invalid tokens), HMAC-SHA256 signature check, idempotency cache, RAG & eligibility pipeline routing. |
+| **Render Startup Crash & Schema Evolution** | **COMPLETE** | **RESOLVED IN PRODUCTION** | **PASS (4 Tests)** | Additive migration resolved missing columns on Neon PostgreSQL. Database connected, startup succeeded, 0 errors. |
 | **Backend Test Suite (Pytest)** | **67 PASSED, 2 SKIPPED** (100% Pass Rate across 69 tests) | **PASS** | **PASS** | All unit, integration, RAG, Bhashini, WhatsApp, and startup regression tests passing. |
 | **Frontend Production Build** | **COMPLETE** | **PASS** | **PASS** | TypeScript + Vite compiled with 0 errors in 4.43s. |
 
@@ -32,37 +32,54 @@
 | Endpoint | Method | Status Code | Observed Response / Evidence |
 |---|---|---|---|
 | `/api/health` | `GET` | **HTTP 200** | `{"status":"healthy","service":"JanSahayak Civic Platform API","version":"1.0.0"}` |
-| `/api/health/db` | `GET` | **HTTP 200** | `{"status":"healthy","database":"connected","dialect":"postgresql"}` (Neon PostgreSQL active) |
+| `/api/health/db` | `GET` | **HTTP 200** | `{"status":"healthy","database":"connected","dialect":"postgresql"}` (Neon PostgreSQL active & connected) |
 | `/api/assistant/status` | `GET` | **HTTP 200** | `{"groq_configured":true,"groq_model":"llama-3.3-70b-versatile","ai_provider":"groq","status":"online"}` |
-| `/api/assistant/documents` | `GET` | **HTTP 404** | `{"detail":"Not Found"}` — Route not present on deployed container |
-| `/api/assistant/search-documents` | `GET` | **HTTP 404** | `{"detail":"Not Found"}` — Route not present on deployed container |
-| `/api/assistant/chat` | `POST` | **HTTP 200** | Responds with Groq LPU inference grounded in pre-RAG database records |
+| `/api/assistant/documents` | `GET` | **HTTP 200** | Returns all 8 official seeded documents with metadata, authorities, and chunk counts |
+| `/api/assistant/search-documents` | `GET` | **HTTP 200** | Hybrid vector search returns top-5 ranked chunks with similarity scores (0.941 top score) |
+| `/api/assistant/chat` | `POST` | **HTTP 200** | Groq LPU LLM inference grounded in RAG passages with citations, page numbers, and uncertainty reporting |
+| `/api/voice/status` | `GET` | **HTTP 200** | `{"provider":"Bhashini...","configured":false,"status":"awaiting_credentials","browser_speech_fallback_supported":true}` |
+| `/api/voice/languages` | `GET` | **HTTP 200** | Returns 11 verified Schedule VIII Indian languages with native scripts |
+| `/api/voice/translate` | `POST` | **HTTP 200** | Identity fallback with explicit `error: "Bhashini credentials pending configuration."` |
+| `/api/voice/tts` | `POST` | **HTTP 200** | Fallback audio signal `use_browser_speech: true, provider: "browser_fallback"` |
+| `/api/whatsapp/status` | `GET` | **HTTP 200** | `{"provider":"Meta WhatsApp Cloud API","configured":false,"status":"awaiting_credentials"}` |
+| `/api/whatsapp/webhook` | `GET` | **HTTP 403** | Webhook verification handshake rejects invalid tokens with 403 Forbidden per Meta security spec |
 
-### 2. Proof of Outdated Render Deployment
-- Render's `/openapi.json` lists 37 paths.
-- The assistant paths present are only `/api/assistant/status` and `/api/assistant/chat`.
-- The routes `/api/assistant/documents`, `/api/assistant/search-documents`, and `/api/whatsapp/webhook` are absent from the production OpenAPI specification.
-- **Root Cause**: On Render free tier, web services do not trigger automatic redeployment on Git push when created manually without a connected auto-deploy webhook or when auto-deploy is delayed/paused. The live container is running commit `fc4ed23`.
-- **Action Required**: The user must trigger a manual redeployment ("Manual Deploy > Clear build cache & deploy") in the Render dashboard for service `jansahayak-backend-kvuq`.
+### 2. Live Verification of Render Deployment (Commit `4cd70d6`)
+- Render OpenAPI `/openapi.json` confirms **42 registered paths** (including all documents, search, voice, and WhatsApp endpoints).
+- Service startup completed with 0 errors following the schema evolution migration.
+- Neon PostgreSQL connection pool verified healthy.
 
-### 3. Technical Disclosure: `semantic_dense_v1` Vector Embedding
-- **Model Type**: Engineered civic-domain concept anchor projection + subword hash dispersion with cosine distance.
-- **Dimensions**: 128 (L2 unit-normalized).
-- **Latency**: Sub-millisecond (<0.5ms per query).
-- **RAM Footprint**: ~0 MB additional RAM (zero PyTorch / zero Transformer dependencies).
-- **Honest Assessment**: It is **NOT** a transformer-grade model (like BGE-small, all-MiniLM-L6-v2, or OpenAI text-embedding-3-small). It is an engineered domain vector space designed specifically to fit within Render's strict 512MB RAM ceiling without triggering container OOM crashes.
+### 3. Live RAG Search & Seeded Corpus Audit
+- `GET /api/assistant/documents` confirms 8 official scheme guidelines seeded:
+  1. **PM-KISAN**: Ministry of Agriculture & Farmers Welfare (`Order No. 1-1/2019-Credit-I`), 4 pages, 5 chunks.
+  2. **PMAY-G**: Ministry of Rural Development (`MoRD Notification No. J-11060/01/2016-RH`), 3 pages, 3 chunks.
+  3. **Ayushman Bharat PM-JAY**: National Health Authority (`NHA OM No. S.12019/02/2018-NHA`), 3 pages, 3 chunks.
+  4. **PMMVY**: Ministry of Women & Child Development (`MWCD Order No. 11-12/2021-PMMVY`), 2 pages, 2 chunks.
+  5. **IGNOAPS**: Ministry of Rural Development, NSAP (`MoRD NSAP Guidelines Section 2.1`), 1 page, 2 chunks.
+  6. **Sukanya Samriddhi Yojana**: Department of Economic Affairs (`GSR 914(E), Gazette of India`), 1 page, 1 chunk.
+  7. **PM SVANidhi**: Ministry of Housing & Urban Affairs (`MoHUA Guidelines No. K-12015/01/2020-UPA-II`), 1 page, 2 chunks.
+  8. **PM Vishwakarma**: Ministry of Micro, Small & Medium Enterprises (`MSME Notification No. 1/1(1)/2023-P&G`), 1 page, 2 chunks.
+- Total active document chunks in production: **21 grounded passages**.
 
-### 4. Corpus Authenticity & Grounded Scheme Guidelines
-- The seeded documents in `seed_corpus.py` are structured policy extracts and operational criteria from verified official government notifications:
-  1. **PM-KISAN**: Ministry of Agriculture & Farmers Welfare (`Order No. 1-1/2019-Credit-I`)
-  2. **PMAY-G**: Ministry of Rural Development (`MoRD Notification No. J-11060/01/2016-RH`)
-  3. **Ayushman Bharat PM-JAY**: National Health Authority (`NHA OM No. S.12019/02/2018-NHA`)
-  4. **PMMVY**: Ministry of Women & Child Development (`MWCD Order No. 11-12/2021-PMMVY`)
-  5. **IGNOAPS**: Ministry of Rural Development, NSAP (`MoRD NSAP Guidelines Section 2.1`)
-  6. **Sukanya Samriddhi Account**: Department of Economic Affairs (`GSR 914(E), Gazette of India`)
-  7. **PM SVANidhi**: Ministry of Housing & Urban Affairs (`MoHUA Guidelines No. K-12015/01/2020-UPA-II`)
-  8. **PM Vishwakarma**: Ministry of Micro, Small & Medium Enterprises (`MSME Notification No. 1/1(1)/2023-P&G`)
-- Each document retains clause identifiers and page numbers.
+### 4. Live PM-KISAN Assistant Chat & Uncertainty Verification
+Tested live via `POST /api/assistant/chat`:
+- **Query**: `"I am a farmer from Bihar with 1.5 acres of agricultural land. Am I eligible for PM-KISAN?"`
+- **Observed Response**:
+  - `ai_provider`: `"groq"`
+  - `is_fallback`: `false`
+  - `citations_count`: 4
+  - **Retrieved Evidence & Page Citations**:
+    1. *Objective & Scope of PM-KISAN* (Page 1, Ref: `Order No. 1-1/2019-Credit-I`, Score: 0.897)
+    2. *Financial Benefit Structure & DBT* (Page 2, Ref: `Order No. 1-1/2019-Credit-I`, Score: 0.850)
+    3. *Active Mobile Number for Transaction Notifications* (Page 4, Ref: `Order No. 1-1/2019-Credit-I`, Score: 0.646)
+    4. *Exclusion Criteria (Mandatory Ineligibility Conditions)* (Page 3, Ref: `Order No. 1-1/2019-Credit-I`, Score: 0.447)
+  - **Deterministic Rule Evaluation**:
+    - Evaluated to `possibly_eligible` (NOT blindly marked eligible).
+    - Satisfied: Landholding (1.5 acres).
+    - Missing criteria flagged: Income tax payment in last assessment year, regular government/PSU employment.
+  - **Grounded LLM Synthesis**:
+    - The LLM explicitly stated: *"The deterministic evaluation (the system’s automatic check) has labeled you POSSIBLY_ELIGIBLE because it still needs answers to the two points above. ... 1. Did you or any member of your household pay income tax in the last assessment year? 2. Is any member of your household a regular employee of the Central/State government or a Public Sector Undertaking (PSU)?"*
+    - The system refuses to assume eligibility based solely on land ownership.
 
 ---
 

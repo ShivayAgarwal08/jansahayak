@@ -1,0 +1,302 @@
+{
+  "health": {
+    "status": 200,
+    "body": {
+      "status": "healthy",
+      "service": "JanSahayak Civic Platform API",
+      "version": "1.0.0",
+      "timestamp": "2026-10-18T22:14:56.245036+00:00"
+    }
+  },
+  "health_db": {
+    "status": 200,
+    "body": {
+      "status": "healthy",
+      "database": "connected",
+      "dialect": "postgresql",
+      "timestamp": "2026-10-18T22:14:56.410061+00:00"
+    }
+  },
+  "routes": {
+    "total_paths": 42,
+    "registered_expected": {
+      "/api/assistant/documents": true,
+      "/api/assistant/search-documents": true,
+      "/api/voice/status": true,
+      "/api/voice/languages": true,
+      "/api/voice/stt": true,
+      "/api/voice/tts": true,
+      "/api/voice/translate": true,
+      "/api/whatsapp/status": true,
+      "/api/whatsapp/webhook": true
+    }
+  },
+  "documents": {
+    "status": 200,
+    "count": 8,
+    "docs_summary": [
+      {
+        "scheme_slug": "pm-kisan",
+        "authority": "Ministry of Agriculture and Farmers Welfare, Govt of India",
+        "ref": "Order No. 1-1/2019-Credit-I",
+        "pages": 4,
+        "chunks": 5,
+        "url": "https://pmkisan.gov.in/Documents_New/Revised_Operational_Guidelines_PM_KISAN.pdf"
+      },
+      {
+        "scheme_slug": "pmay-g",
+        "authority": "Ministry of Rural Development, Govt of India",
+        "ref": "MoRD Notification No. J-11060/01/2016-RH",
+        "pages": 3,
+        "chunks": 3,
+        "url": "https://pmayg.nic.in/netiay/Pmay-G-Guidelines-En.pdf"
+      },
+      {
+        "scheme_slug": "ayushman-bharat-pmjay",
+        "authority": "National Health Authority, Ministry of Health and Family Welfare",
+        "ref": "NHA OM No. S.12019/02/2018-NHA",
+        "pages": 3,
+        "chunks": 3,
+        "url": "https://pmjay.gov.in"
+      },
+      {
+        "scheme_slug": "pmmvy",
+        "authority": "Ministry of Women and Child Development, Govt of India",
+        "ref": "MWCD Order No. 11-12/2021-PMMVY",
+        "pages": 2,
+        "chunks": 2,
+        "url": "https://pmmvy.wcd.gov.in"
+      },
+      {
+        "scheme_slug": "ignoaps",
+        "authority": "Ministry of Rural Development, Govt of India",
+        "ref": "MoRD NSAP Guidelines Section 2.1",
+        "pages": 1,
+        "chunks": 2,
+        "url": "https://nsap.nic.in"
+      },
+      {
+        "scheme_slug": "sukanya-samriddhi-yojana",
+        "authority": "Department of Economic Affairs, Ministry of Finance",
+        "ref": "GSR 914(E), Gazette of India",
+        "pages": 1,
+        "chunks": 1,
+        "url": "https://www.indiapost.gov.in"
+      },
+      {
+        "scheme_slug": "pm-svanidhi",
+        "authority": "Ministry of Housing and Urban Affairs, Govt of India",
+        "ref": "MoHUA Guidelines No. K-12015/01/2020-UPA-II",
+        "pages": 1,
+        "chunks": 2,
+        "url": "https://pmsvanidhi.mohua.gov.in"
+      },
+      {
+        "scheme_slug": "pm-vishwakarma",
+        "authority": "Ministry of Micro, Small & Medium Enterprises, Govt of India",
+        "ref": "MSME Notification No. 1/1(1)/2023-P&G",
+        "pages": 1,
+        "chunks": 2,
+        "url": "https://pmvishwakarma.gov.in"
+      }
+    ]
+  },
+  "search_documents": {
+    "status": 200,
+    "query": null,
+    "total_results": null,
+    "top_result": null
+  },
+  "assistant_status": {
+    "status": 200,
+    "body": {
+      "groq_configured": true,
+      "groq_model": "llama-3.3-70b-versatile",
+      "ai_provider": "groq",
+      "fallback_available": true,
+      "status": "online",
+      "available_models": null,
+      "provider_note": "Configured in environment"
+    }
+  },
+  "whatsapp_status": {
+    "status": 200,
+    "body": {
+      "provider": "Meta WhatsApp Cloud API",
+      "configured": false,
+      "status": "awaiting_credentials",
+      "verify_token_configured": false,
+      "access_token_configured": false,
+      "phone_number_id_configured": false,
+      "app_secret_configured": false,
+      "live_messaging_available": false,
+      "message": "WhatsApp Cloud API credentials pending configuration on server. Webhook validation and mocked responses active."
+    }
+  },
+  "voice_status": {
+    "status": 200,
+    "body": {
+      "provider": "Bhashini (National Language Translation Mission)",
+      "configured": false,
+      "status": "awaiting_credentials",
+      "supported_languages_count": 11,
+      "browser_speech_fallback_supported": true,
+      "message": "Bhashini credentials are pending configuration. Browser Web Speech and text inputs are active as default fallbacks."
+    }
+  },
+  "pm_kisan_chat": {
+    "status": 200,
+    "ai_provider": "groq",
+    "is_fallback": false,
+    "answer": "**Answer (English – citizen‑friendly)**  \n\nDear farmer,  \n\nBased on the official guidelines for the **Pradhan Mantri Kisan Samman Nidhi (PM‑KISAN)** scheme, here is what we can tell you right now:\n\n| What the government says | Where it comes from |\n|---------------------------|---------------------|\n| *“The scheme aims to augment the financial needs of all land‑holding farmer families … irrespective of the size of their land holdings, subject to the prevailing exclusion criteria.”* | **Passage 1 (Page 1)** |\n| *“An income support of ₹6,000 per financial year … payable in three equal installments of ₹2,000 each.”* | **Passage 2 (Page 2)** |\n| *“Exclusion criteria – families in which any member paid income tax in the last assessment year, or is a current/former government/PSU employee, among other high‑economic‑status categories, are NOT eligible.”* | **Passage 4 (Page 3)** |\n| *“Farmers can register online via the PM‑KISAN portal https://pmkisan.gov.in* … *Grievances can be lodged via the PM‑KISAN Helpdesk or State Portal.”* | **Passage 3 (Page 4)** |\n\n### 1. What we know about you\n- **State:** Bihar  \n- **Occupation:** Farmer  \n- **Cultivable land owned:** 1.5 acres (landholding confirmed)  \n\nThe scheme **covers all land‑holding farmer families**, regardless of how many acres they own, so the size of your land (1.5 acres) does **not** disqualify you.  \n\n### 2. What could disqualify you\nThe only *mandatory exclusion* that could stop you from receiving the benefit are the conditions listed in **Passage 4**. The two items that the deterministic check flagged as “missing/unknown” are:\n\n1. **Did you or any member of your household pay income tax in the last assessment year?**  \n2. **Is any member of your household a regular employee of the Central/State government or a Public Sector Undertaking (PSU) (excluding MTS, Class IV, Group D staff)?**  \n\nIf the answer to **both** questions is **No**, you satisfy the exclusion‑criteria test and would be **eligible** for the ₹6,000 annual support (₹2,000 per installment).  \n\n### 3. Current eligibility status\n- The deterministic evaluation (the system’s automatic check) has labeled you **POSSIBLY_ELIGIBLE** because it still needs answers to the two points above.  \n- No condition has been found that *disqualifies* you so far.\n\n### 4. What you should do next\n1. **Gather the required information** – check your income‑tax records for the last year and confirm whether any family member is a regular government/PSU employee.  \n2. **Visit the official PM‑KISAN portal** – https://pmkisan.gov.in – and register under “Farmers Corner”. You will need:  \n   - Aadhaar‑linked bank account (mandatory for DBT)  \n   - Your land‑record details (already available)  \n   - Answers to the two questions above (the portal will ask them).  \n3. **If you face any difficulty** (e.g., installment not credited), you can lodge a grievance through the PM‑KISAN Helpdesk or the State portal, as mentioned in **Passage 3**.  \n\n### 5. Quick checklist for you\n\n| Question | Your answer (please confirm) |\n|----------|------------------------------",
+    "citations_count": 4,
+    "citations": [
+      {
+        "citation_id": 1,
+        "scheme_slug": "pm-kisan",
+        "scheme_name": "PM-KISAN (Pradhan Mantri Kisan Samman Nidhi)",
+        "title": "PM-KISAN Operational Guidelines & Revised Scheme Document - OBJECTIVE & SCOPE OF PM-KISAN",
+        "authority": "Ministry of Agriculture and Farmers Welfare, Govt of India",
+        "url": "https://pmkisan.gov.in/Documents_New/Revised_Operational_Guidelines_PM_KISAN.pdf",
+        "page_number": 1,
+        "match_reasons": [
+          "Semantic vector match (0.90)",
+          "Matched agricultural & farmer landholding criteria (matched: kisan, farmer, agricultural, acres, land)",
+          "Matched 3 civic query keywords in official guideline text"
+        ],
+        "is_seeded_record": false,
+        "document_reference": "Order No. 1-1/2019-Credit-I",
+        "similarity_score": 0.897
+      },
+      {
+        "citation_id": 2,
+        "scheme_slug": "pm-kisan",
+        "scheme_name": "PM-KISAN (Pradhan Mantri Kisan Samman Nidhi)",
+        "title": "PM-KISAN Operational Guidelines & Revised Scheme Document - FINANCIAL BENEFIT STRUCTURE & DIRECT BENEFIT TRANSFER",
+        "authority": "Ministry of Agriculture and Farmers Welfare, Govt of India",
+        "url": "https://pmkisan.gov.in/Documents_New/Revised_Operational_Guidelines_PM_KISAN.pdf",
+        "page_number": 2,
+        "match_reasons": [
+          "Semantic vector match (0.85)",
+          "Matched agricultural & farmer landholding criteria (matched: kisan, farmer, agricultural, acres, land)",
+          "Matched 3 civic query keywords in official guideline text"
+        ],
+        "is_seeded_record": false,
+        "document_reference": "Order No. 1-1/2019-Credit-I",
+        "similarity_score": 0.85
+      },
+      {
+        "citation_id": 3,
+        "scheme_slug": "pm-kisan",
+        "scheme_name": "PM-KISAN (Pradhan Mantri Kisan Samman Nidhi)",
+        "title": "PM-KISAN Operational Guidelines & Revised Scheme Document - Active mobile number for transaction notifications.",
+        "authority": "Ministry of Agriculture and Farmers Welfare, Govt of India",
+        "url": "https://pmkisan.gov.in/Documents_New/Revised_Operational_Guidelines_PM_KISAN.pdf",
+        "page_number": 4,
+        "match_reasons": [
+          "Semantic vector match (0.65)",
+          "Matched agricultural & farmer landholding criteria (matched: kisan, farmer, agricultural, acres, land)",
+          "Matched 3 civic query keywords in official guideline text"
+        ],
+        "is_seeded_record": false,
+        "document_reference": "Order No. 1-1/2019-Credit-I",
+        "similarity_score": 0.646
+      },
+      {
+        "citation_id": 4,
+        "scheme_slug": "pm-kisan",
+        "scheme_name": "PM-KISAN (Pradhan Mantri Kisan Samman Nidhi)",
+        "title": "PM-KISAN Operational Guidelines & Revised Scheme Document - EXCLUSION CRITERIA (MANDATORY INELIGIBILITY CONDITIONS)",
+        "authority": "Ministry of Agriculture and Farmers Welfare, Govt of India",
+        "url": "https://pmkisan.gov.in/Documents_New/Revised_Operational_Guidelines_PM_KISAN.pdf",
+        "page_number": 3,
+        "match_reasons": [
+          "Semantic vector match (0.45)",
+          "Matched agricultural & farmer landholding criteria (matched: kisan, farmer, agricultural, acres, land)",
+          "Matched 3 civic query keywords in official guideline text"
+        ],
+        "is_seeded_record": false,
+        "document_reference": "Order No. 1-1/2019-Credit-I",
+        "similarity_score": 0.447
+      }
+    ],
+    "extracted_profile": {
+      "state": "Bihar",
+      "district": null,
+      "occupation": "farmer",
+      "age": null,
+      "gender": null,
+      "annual_income": null,
+      "owns_cultivable_land": true,
+      "landholding_raw": "1.5 acre(s)",
+      "landholding_acres": 1.5,
+      "landholding_notes": "Confirmed 1.5 acre(s).",
+      "family_details": {},
+      "housing_type": null,
+      "area_type": null,
+      "is_bpl": null,
+      "is_govt_employee": null,
+      "pays_income_tax": null,
+      "is_pregnant_or_lactating": null,
+      "has_girl_child_under_10": null,
+      "girl_child_age": null,
+      "is_street_vendor": null,
+      "is_traditional_artisan": null
+    },
+    "missing_criteria": [
+      "Did you or anyone in your household pay income tax in the last financial year?",
+      "Are you or a family member a regular government/PSU employee?"
+    ],
+    "eligibility_results": [
+      {
+        "scheme_id": 1,
+        "scheme_slug": "pm-kisan",
+        "scheme_name": "PM-KISAN (Pradhan Mantri Kisan Samman Nidhi)",
+        "status": "possibly_eligible",
+        "summary_explanation": "You appear potentially eligible for PM-KISAN (Pradhan Mantri Kisan Samman Nidhi), but 2 item(s) require additional information before qualification can be confirmed.",
+        "satisfied_conditions": [
+          {
+            "criterion": "Landholding",
+            "official_rule": "Must own cultivable agricultural land in applicant's name.",
+            "citizen_value": "Owns cultivable land"
+          }
+        ],
+        "unsatisfied_conditions": [],
+        "unknown_conditions": [
+          {
+            "criterion": "Employment Status",
+            "prompt": "Are you or your family members regular government/PSU employees?"
+          },
+          {
+            "criterion": "Tax Status",
+            "prompt": "Did you or your family pay income tax in the last assessment year?"
+          }
+        ],
+        "applicable_exclusions": [
+          "Institutional landholders",
+          "Farmer families holding constitutional posts (former/present)",
+          "Former and present Ministers, MPs, MLAs, MLCs, Mayors, District Panchayat Chairpersons",
+          "Serving or retired officers and employees of Central/State Govt Ministries/Offices/PSUs (excluding Multi-Tasking Staff / Class IV / Group D)",
+          "Professionals like Doctors, Engineers, Lawyers, Chartered Accountants, and Architects",
+          "All persons who paid Income Tax in the last assessment year",
+          "Pensioners receiving monthly pension of ₹10,000 or more (excluding Class IV/Group D)"
+        ],
+        "official_sources": [
+          {
+            "title": "PM-KISAN Operational Guidelines & Revised Scheme Document",
+            "url": "https://pmkisan.gov.in/Documents_New/Revised_Operational_Guidelines_PM_KISAN.pdf",
+            "authority": "Ministry of Agriculture and Farmers Welfare, Govt of India"
+          }
+        ],
+        "next_steps": [
+          "Provide the missing details in the questionnaire above to complete the assessment.",
+          "Check acceptable alternative documents if certain primary papers are missing.",
+          "Consult the official scheme guidelines link below."
+        ],
+        "assessed_at": "2026-10-18T22:14:57.912462+00:00",
+        "disclaimer": "This automated assessment is rule-based informational guidance and does not constitute official sanction, approval, or guarantee of welfare benefits by the issuing government department."
+      }
+    ],
+    "follow_up_prompt": "To confirm your eligibility under official scheme criteria, could you please clarify: Did you or anyone in your household pay income tax in the last financial year? Are you or a family member a regular government/PSU employee?"
+  }
+}
