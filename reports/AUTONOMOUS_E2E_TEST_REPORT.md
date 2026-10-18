@@ -18,8 +18,9 @@
 
 | Domain / Dimension | Verification Result | Status |
 | :--- | :--- | :---: |
-| **Git Revision & Sync** | Local HEAD [`681eb66`](https://github.com/ShivayAgarwal08/jansahayak/commit/681eb66) synchronized with GitHub `origin/main` | **PASS** |
-| **Backend Deployed SHA** | Render verified running deployed commit `681eb66d949779fdfa2f087b9cfd244849a05041` | **PASS** |
+| **Git Revision & Sync** | Local HEAD [`585d095`](https://github.com/ShivayAgarwal08/jansahayak/commit/585d095) synchronized with GitHub `origin/main` | **PASS** |
+| **Backend Deployed SHA** | Render running verified release `681eb66d949779fdfa2f087b9cfd244849a05041` | **PASS** |
+| **Runtime Code Parity** | 100% code parity (`681eb66..585d095` contains exclusively audit markdown diffs) | **PASS** |
 | **Live Backend Health & DB** | HTTP 200 on `/api/health` and `/api/health/db` (PostgreSQL connected) | **PASS** |
 | **Live Frontend User Journeys** | Browser automation verified landing, schemes, eligibility, prep, and drafts | **PASS** |
 | **Responsive & Empty States** | Mobile layout (390x844) clean; empty search state provides functional reset | **PASS** |
@@ -42,8 +43,9 @@
 
 ### Git State
 - **Branch:** `main`
-- **Active Working Commit:** `681eb66` (`feat(audit): add 40-query held-out benchmark, scam abstention filters, Hinglish civic terms, and PDF tenant isolation`)
+- **Active Working Commit:** `585d095` (`docs(audit): publish final release gate audit report with passage substantiation and skipped test analysis`)
 - **Remote Repository:** `https://github.com/ShivayAgarwal08/jansahayak.git`
+- **Runtime Code Parity:** The diff between `681eb66` (deployed on Render) and `585d095` (on `origin/main`) consists solely of audit documentation updates to `reports/AUTONOMOUS_E2E_TEST_REPORT.md`. Zero backend or frontend runtime code differs.
 
 ### Cryptographic Render Deployment Verification
 - **Probe Target:** `GET https://jansahayak-backend-kvuq.onrender.com/api/health`
@@ -55,7 +57,7 @@
     "service": "JanSahayak Civic Platform API",
     "version": "1.0.0",
     "git_commit": "681eb66d949779fdfa2f087b9cfd244849a05041",
-    "timestamp": "2026-10-18T23:41:50.058021+00:00"
+    "timestamp": "2026-10-18T23:47:41.131307+00:00"
   }
   ```
 - **Database Health Probe:** `GET https://jansahayak-backend-kvuq.onrender.com/api/health/db`
