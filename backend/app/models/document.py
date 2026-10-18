@@ -11,6 +11,10 @@ class KnowledgeDocument(Base):
     title = Column(String(250), nullable=False)
     source_url = Column(String(500), nullable=False)
     authority = Column(String(200), nullable=False)
+    document_reference = Column(String(250), nullable=True)  # Order No., Notification
+    retrieval_date = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    doc_type = Column(String(50), default="guidelines", nullable=False)  # pdf, guidelines, web_page
+    ocr_status = Column(String(50), default="not_needed", nullable=False)  # not_needed, ocr_required, completed
     total_pages = Column(Integer, default=1, nullable=False)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
 
@@ -24,8 +28,11 @@ class DocumentChunk(Base):
     document_id = Column(Integer, ForeignKey("knowledge_documents.id", ondelete="CASCADE"), nullable=False, index=True)
     chunk_index = Column(Integer, nullable=False)
     page_number = Column(Integer, default=1, nullable=False)
+    section_title = Column(String(250), nullable=True)
     content = Column(Text, nullable=False)
     keywords = Column(JSON, default=list, nullable=False)
+    embedding = Column(JSON, nullable=True)  # Dense vector embedding (list of floats)
+    token_count = Column(Integer, default=0, nullable=False)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
 
     document = relationship("KnowledgeDocument", back_populates="chunks")

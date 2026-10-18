@@ -186,7 +186,11 @@ async def chat_with_assistant(
             title=c["title"],
             authority=c["authority"],
             url=c["url"],
-            page_number=c["page_number"]
+            page_number=c["page_number"],
+            match_reasons=c.get("match_reasons"),
+            is_seeded_record=c.get("is_seeded_record", True),
+            document_reference=c.get("document_reference"),
+            similarity_score=c.get("similarity_score")
         )
         for c in result.get("citations", [])
     ]
@@ -205,3 +209,43 @@ async def chat_with_assistant(
         eligibility_results=eligibility_evaluations,
         suggested_action=suggested_action
     )
+
+@router.get("/documents")
+def list_knowledge_documents(db: Session = Depends(get_db)):
+    """
+    List all ingested official government scheme guidelines and knowledge documents.
+    """
+    from app.models.document import KnowledgeDocument
+    docs = db.query(KnowledgeDocument).all()
+    return [
+        {
+            "id": d.id,
+            "scheme_id": d.scheme_id,
+            "scheme_slug": d.scheme.slug if d.scheme else None,
+            "scheme_name": d.scheme.name if d.scheme else None,
+            "title": d.title,
+            "source_url": d.source_url,
+            "authority": d.authority,
+            "document_reference": d.document_reference,
+            "doc_type": d.doc_type,
+            "ocr_status": d.ocr_status,
+            "total_pages": d.total_pages,
+            "chunks_count": len(d.chunks),
+            "retrieval_date": d.retrieval_date.isoformat() if hasattr(d.retrieval_date, "isoformat") else str(d.retrieval_date)
+        }
+        for d in docs
+    ]
+
+@router.get("/search-documents")
+def search_documents_endpoint(
+    query: str,
+    db: Session = Depends(get_db),
+    limit: int = 5
+):
+    """
+    Search official document passages using hybrid semantic vector and keyword retrieval.
+    """
+    from app.services.rag.retrieval import search_official_documents
+    if not query.strip():
+        raise HTTPException(status_code=400, detail="Query cannot be empty.")
+    return search_official_documents(query=query.strip(), db=db, limit=limit)

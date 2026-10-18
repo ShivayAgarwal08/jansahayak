@@ -427,3 +427,10 @@ def seed_database(db: Session):
         )
         db.add(admin)
         db.commit()
+
+    # Seed official government scheme documents corpus into KnowledgeDocument and DocumentChunk tables
+    try:
+        from app.services.rag.seed_corpus import seed_official_documents_corpus
+        seed_official_documents_corpus(db)
+    except Exception:
+        pass

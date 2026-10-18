@@ -3,6 +3,9 @@ from typing import List, Dict, Any, Optional, Tuple
 from sqlalchemy.orm import Session
 from app.models.scheme import Scheme
 
+from app.models.document import KnowledgeDocument, DocumentChunk
+from app.services.rag.embeddings import generate_embedding, compute_cosine_similarity
+
 # Comprehensive stopwords to prevent generic numbers and conversational filler from polluting search
 STOPWORDS = {
     # English grammar & conversational fillers
@@ -81,7 +84,9 @@ class Passage:
         content: str,
         page_number: int = 1,
         match_reasons: Optional[List[str]] = None,
-        is_seeded_record: bool = True
+        is_seeded_record: bool = True,
+        document_reference: Optional[str] = None,
+        similarity_score: Optional[float] = None
     ):
         self.scheme_slug = scheme_slug
         self.scheme_name = scheme_name
@@ -92,6 +97,8 @@ class Passage:
         self.page_number = page_number
         self.match_reasons = match_reasons or []
         self.is_seeded_record = is_seeded_record
+        self.document_reference = document_reference
+        self.similarity_score = similarity_score
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -103,7 +110,9 @@ class Passage:
             "content": self.content,
             "page_number": self.page_number,
             "match_reasons": self.match_reasons,
-            "is_seeded_record": self.is_seeded_record
+            "is_seeded_record": self.is_seeded_record,
+            "document_reference": self.document_reference,
+            "similarity_score": self.similarity_score
         }
 
 def build_scheme_passages(scheme: Scheme) -> List[Passage]:
@@ -188,17 +197,10 @@ def retrieve_grounded_passages(
 ) -> List[Passage]:
     """
     Search and retrieve the most relevant verified scheme passages for a user query.
-    Applies stopword filtering, domain intent matching, and specific criteria weighting.
+    First performs hybrid semantic vector search over ingested official DocumentChunk records.
+    If no document chunks are present in DB, falls back gracefully to structured scheme definitions.
     Prevents false-positive ranking of maternal or pension schemes due to generic numbers.
     """
-    schemes = db.query(Scheme).filter(Scheme.verification_status == "verified").all()
-    if target_scheme_slug:
-        schemes = [s for s in schemes if s.slug == target_scheme_slug] or schemes
-
-    all_passages: List[Passage] = []
-    for s in schemes:
-        all_passages.extend(build_scheme_passages(s))
-
     # Tokenize and filter stopwords
     raw_tokens = re.findall(r"\w+", query.lower())
     meaningful_tokens = [w for w in raw_tokens if len(w) > 2 and w not in STOPWORDS]
@@ -211,20 +213,109 @@ def retrieve_grounded_passages(
         if matched_kws:
             matched_domains[slug] = matched_kws
 
-    scored: List[Tuple[int, Passage]] = []
+    is_agri_query = "pm-kisan" in matched_domains or any(w in query_str_lower for w in ["farmer", "kisan", "cultivator", "bigha", "land"])
+
+    # 1. Attempt vector search over ingested official DocumentChunk records
+    db_chunks = []
+    try:
+        chunk_q = db.query(DocumentChunk)
+        if hasattr(chunk_q, "join"):
+            chunk_q = chunk_q.join(KnowledgeDocument, DocumentChunk.document_id == KnowledgeDocument.id)\
+                .join(Scheme, KnowledgeDocument.scheme_id == Scheme.id)\
+                .filter(Scheme.verification_status == "verified")
+            if target_scheme_slug:
+                chunk_q = chunk_q.filter(Scheme.slug == target_scheme_slug)
+            
+            # Retrieve chunks with related document and scheme
+            raw_results = chunk_q.all()
+            for item in raw_results:
+                if isinstance(item, DocumentChunk):
+                    # Chunks loaded via relationship
+                    doc = item.document
+                    scheme = doc.scheme if doc else None
+                    if doc and scheme:
+                        db_chunks.append((item, doc, scheme))
+                elif isinstance(item, (tuple, list)) and len(item) == 3:
+                    db_chunks.append(item)
+    except Exception:
+        db_chunks = []
+
+    if db_chunks:
+        query_vec = generate_embedding(query)
+        scored_chunks: List[Tuple[float, Passage]] = []
+
+        for chunk, doc, scheme in db_chunks:
+            # Vector cosine similarity
+            vec_sim = compute_cosine_similarity(query_vec, chunk.embedding) if chunk.embedding else 0.0
+            score = vec_sim * 40.0
+            reasons = [f"Semantic vector match ({vec_sim:.2f})"]
+
+            # Domain intent boost
+            if scheme.slug in matched_domains:
+                intent = DOMAIN_INTENTS[scheme.slug]
+                score += intent["boost"]
+                reasons.append(f"{intent['reason']} (matched: {', '.join(matched_domains[scheme.slug])})")
+
+            # Keyword and section matching
+            content_lower = chunk.content.lower()
+            token_hits = 0
+            for t in meaningful_tokens:
+                if t in content_lower or (chunk.keywords and t in chunk.keywords):
+                    score += 4.0
+                    token_hits += 1
+
+            if token_hits > 0:
+                reasons.append(f"Matched {token_hits} civic query keywords in official guideline text")
+
+            # Negative penalty for irrelevant categories on specific agricultural queries
+            if is_agri_query:
+                if scheme.slug == "pmmvy" and "pmmvy" not in matched_domains:
+                    score = -100.0
+                elif scheme.slug == "ignoaps" and "ignoaps" not in matched_domains:
+                    score = -100.0
+
+            if score > 5.0 or (vec_sim > 0.35 and score > 0):
+                passage = Passage(
+                    scheme_slug=scheme.slug,
+                    scheme_name=scheme.name,
+                    title=f"{doc.title} - {chunk.section_title or f'Page {chunk.page_number}'}",
+                    authority=doc.authority,
+                    url=doc.source_url,
+                    content=chunk.content,
+                    page_number=chunk.page_number,
+                    match_reasons=reasons,
+                    is_seeded_record=False,
+                    document_reference=doc.document_reference,
+                    similarity_score=round(vec_sim, 3)
+                )
+                scored_chunks.append((score, passage))
+
+        scored_chunks.sort(key=lambda x: x[0], reverse=True)
+        results = [item[1] for item in scored_chunks[:limit]]
+        if results:
+            return results
+
+    # 2. Fallback to structured scheme definitions if document chunks are empty or no matches found
+    schemes = db.query(Scheme).filter(Scheme.verification_status == "verified").all()
+    if target_scheme_slug:
+        schemes = [s for s in schemes if s.slug == target_scheme_slug] or schemes
+
+    all_passages: List[Passage] = []
+    for s in schemes:
+        all_passages.extend(build_scheme_passages(s))
+
+    scored_passages: List[Tuple[int, Passage]] = []
 
     for p in all_passages:
         score = 0
         reasons: List[str] = []
         text = f"{p.scheme_name} {p.title} {p.content}".lower()
 
-        # 1. Domain Intent Score
         if p.scheme_slug in matched_domains:
             intent = DOMAIN_INTENTS[p.scheme_slug]
             score += intent["boost"]
             reasons.append(f"{intent['reason']} (matched: {', '.join(matched_domains[p.scheme_slug])})")
 
-        # 2. Token Matching (filtered)
         token_hits = 0
         for token in meaningful_tokens:
             if token in p.scheme_slug:
@@ -245,25 +336,32 @@ def retrieve_grounded_passages(
         if token_hits > 0 and not reasons:
             reasons.append("Matched relevant scheme keywords in official verified documentation")
 
-        # 3. Penalize maternal or old-age schemes if the query is explicitly about farmers/agriculture
-        # and has NO maternity/senior keywords
-        is_agri_query = "pm-kisan" in matched_domains or any(w in query_str_lower for w in ["farmer", "kisan", "cultivator", "bigha", "land"])
         if is_agri_query:
             if p.scheme_slug == "pmmvy" and "pmmvy" not in matched_domains:
-                score = -100  # Disqualify from agricultural results
+                score = -100
             elif p.scheme_slug == "ignoaps" and "ignoaps" not in matched_domains:
-                score = -100  # Disqualify from agricultural results
+                score = -100
 
         if score > 0:
             p.match_reasons = reasons
-            scored.append((score, p))
+            scored_passages.append((score, p))
 
-    # Sort descending by relevance score
-    scored.sort(key=lambda x: x[0], reverse=True)
-    results = [item[1] for item in scored[:limit]]
+    scored_passages.sort(key=lambda x: x[0], reverse=True)
+    results = [item[1] for item in scored_passages[:limit]]
 
-    # Fallback to general schemes if nothing scored > 0
     if not results:
         results = all_passages[:limit]
 
     return results
+
+def search_official_documents(
+    query: str,
+    db: Session,
+    limit: int = 5
+) -> List[Dict[str, Any]]:
+    """
+    Search official document chunks via hybrid vector and keyword retrieval.
+    Returns structured results with source URLs, page numbers, and similarity metrics.
+    """
+    passages = retrieve_grounded_passages(query=query, db=db, limit=limit)
+    return [p.to_dict() for p in passages]

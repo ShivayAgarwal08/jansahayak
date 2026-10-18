@@ -11,6 +11,8 @@ class CitationSchema(BaseModel):
     page_number: int
     match_reasons: Optional[List[str]] = None
     is_seeded_record: Optional[bool] = True
+    document_reference: Optional[str] = None
+    similarity_score: Optional[float] = None
 
 class AssistantChatRequest(BaseModel):
     query: str

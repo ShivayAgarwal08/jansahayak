@@ -6,6 +6,7 @@ from fastapi.responses import JSONResponse
 from app.core.config import settings
 from app.db.session import engine, Base, SessionLocal
 from app.db.seed_data import seed_database
+from app.services.rag.seed_corpus import seed_official_documents_corpus
 import app.models  # ensure models are registered with Base.metadata
 
 # Import API Routers
@@ -24,11 +25,12 @@ from app.api.admin import router as admin_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: Ensure database tables exist & seed initial verified schemes
+    # Startup: Ensure database tables exist & seed initial verified schemes and official RAG corpus
     Base.metadata.create_all(bind=engine)
     db = SessionLocal()
     try:
         seed_database(db)
+        seed_official_documents_corpus(db)
     finally:
         db.close()
     yield

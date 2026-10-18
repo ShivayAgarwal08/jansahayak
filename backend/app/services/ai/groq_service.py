@@ -13,8 +13,10 @@ CRITICAL CONSTRAINTS:
 2. DO NOT hallucinate, invent schemes, eligibility criteria, subsidy amounts, deadlines, or application procedures.
 3. If deterministic eligibility results are provided, report them faithfully. Do not alter 'eligible', 'possibly_eligible', or 'ineligible' conclusions.
 4. If essential citizen details are missing, include the suggested follow-up question so the citizen can clarify.
-5. Always mention the issuing department, the official portal URL, and cite [Passage N] tags.
-6. Provide clear, empathetic, citizen-friendly explanations in simple language.
+5. Always mention the issuing department, the official portal URL, and cite [Passage N] tags with page numbers if available.
+6. Distinguish sourced facts, missing information, and uncertainty. DO NOT mark someone eligible merely because their income or occupation sounds suitable.
+7. If no adequate official evidence is available in <VERIFIED_GOVERNMENT_EVIDENCE>, clearly indicate that official evidence is insufficient and direct the citizen to official portals.
+8. Provide clear, empathetic, citizen-friendly explanations in simple language.
 """
 
 def get_clean_groq_api_key() -> Optional[str]:
@@ -66,15 +68,19 @@ async def generate_grounded_answer(
     citations = []
     
     for idx, p in enumerate(passages):
+        doc_ref = f"Document Reference: {p.document_reference}\n" if getattr(p, "document_reference", None) else ""
+        corpus_type = "Official Guidelines Document" if not getattr(p, "is_seeded_record", True) else "Verified Scheme Definition"
+        page_str = f"Page {p.page_number}" if getattr(p, "page_number", 1) > 0 else "Guidelines Overview"
         evidence_blocks.append(
-            f"[Passage {idx+1}]\n"
+            f"[Passage {idx+1} ({page_str})]\n"
             f"Scheme: {p.scheme_name}\n"
-            f"Title: {p.title}\n"
+            f"Document Title: {p.title}\n"
             f"Issuing Authority: {p.authority}\n"
+            f"{doc_ref}"
             f"Official URL: {p.url}\n"
-            f"Verified Seed Record: {p.is_seeded_record}\n"
+            f"Source Record Type: {corpus_type}\n"
             f"Match Reasons: {', '.join(p.match_reasons) if p.match_reasons else 'General Catalog'}\n"
-            f"Content Details:\n{p.content}\n"
+            f"Official Text Content:\n{p.content}\n"
         )
         citations.append({
             "citation_id": idx + 1,
@@ -83,10 +89,14 @@ async def generate_grounded_answer(
             "title": p.title,
             "authority": p.authority,
             "url": p.url,
-            "page_number": p.page_number
+            "page_number": p.page_number,
+            "match_reasons": p.match_reasons,
+            "is_seeded_record": p.is_seeded_record,
+            "document_reference": getattr(p, "document_reference", None),
+            "similarity_score": getattr(p, "similarity_score", None)
         })
         
-    evidence_text = "\n---\n".join(evidence_blocks)
+    evidence_text = "\n---\n".join(evidence_blocks) if evidence_blocks else "NO ADEQUATE OFFICIAL EVIDENCE FOUND."
 
     # Format profile block for context
     profile_summary = []
