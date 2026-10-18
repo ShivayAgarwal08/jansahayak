@@ -389,14 +389,15 @@ VERIFIED_SCHEMES = [
 
 def seed_database(db: Session):
     """
-    Populate database with initial verified government schemes and default admin user if not present.
+    Populate database with initial verified government schemes and default admin user idempotently.
     """
-    # Check if schemes already exist
-    existing_count = db.query(Scheme).count()
-    if existing_count == 0:
-        for data in VERIFIED_SCHEMES:
-            sources_data = data.pop("sources", [])
-            scheme = Scheme(**data)
+    for data in VERIFIED_SCHEMES:
+        data_copy = dict(data)
+        sources_data = data_copy.pop("sources", [])
+        
+        existing_scheme = db.query(Scheme).filter(Scheme.slug == data_copy["slug"]).first()
+        if not existing_scheme:
+            scheme = Scheme(**data_copy)
             db.add(scheme)
             db.flush()
 
@@ -409,7 +410,7 @@ def seed_database(db: Session):
                     document_reference=s.get("document_reference")
                 )
                 db.add(source)
-        db.commit()
+            db.commit()
 
     # Check for default admin user
     admin_user = db.query(User).filter(User.email == "admin@jansahayak.gov.in").first()

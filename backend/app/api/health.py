@@ -19,14 +19,16 @@ def health_check():
 def health_db(db: Session = Depends(get_db)):
     try:
         db.execute(text("SELECT 1"))
+        dialect = db.bind.dialect.name if db.bind else "unknown"
         return {
             "status": "healthy",
             "database": "connected",
+            "dialect": dialect,
             "timestamp": datetime.now(timezone.utc).isoformat()
         }
     except Exception as e:
         return {
             "status": "unhealthy",
             "database": "disconnected",
-            "error": str(e)
+            "error": "Database connection failed"
         }

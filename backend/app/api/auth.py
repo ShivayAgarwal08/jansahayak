@@ -6,7 +6,18 @@ from app.schemas.user import UserCreate, UserLogin, UserResponse, TokenResponse,
 from app.core.security import hash_password, verify_password, create_access_token
 from app.api.deps import get_current_user
 
+from app.core.config import settings
+
 router = APIRouter(prefix="/auth", tags=["Authentication"])
+
+def _get_cookie_params():
+    is_prod = settings.ENVIRONMENT == "production"
+    return {
+        "httponly": True,
+        "max_age": 60 * 60 * 24,
+        "samesite": "none" if is_prod else "lax",
+        "secure": is_prod
+    }
 
 @router.post("/register", response_model=TokenResponse)
 def register_citizen(user_in: UserCreate, response: Response, db: Session = Depends(get_db)):
@@ -37,10 +48,7 @@ def register_citizen(user_in: UserCreate, response: Response, db: Session = Depe
     response.set_cookie(
         key="access_token",
         value=f"Bearer {token}",
-        httponly=True,
-        max_age=60 * 60 * 24,
-        samesite="lax",
-        secure=False  # Set True in production with HTTPS
+        **_get_cookie_params()
     )
 
     return {
@@ -68,10 +76,7 @@ def login_citizen(user_in: UserLogin, response: Response, db: Session = Depends(
     response.set_cookie(
         key="access_token",
         value=f"Bearer {token}",
-        httponly=True,
-        max_age=60 * 60 * 24,
-        samesite="lax",
-        secure=False
+        **_get_cookie_params()
     )
 
     return {
@@ -82,7 +87,12 @@ def login_citizen(user_in: UserLogin, response: Response, db: Session = Depends(
 
 @router.post("/logout")
 def logout_citizen(response: Response):
-    response.delete_cookie(key="access_token")
+    is_prod = settings.ENVIRONMENT == "production"
+    response.delete_cookie(
+        key="access_token",
+        samesite="none" if is_prod else "lax",
+        secure=is_prod
+    )
     return {"message": "Successfully logged out."}
 
 @router.get("/me", response_model=UserResponse)
@@ -113,5 +123,10 @@ def delete_account(response: Response, current_user: User = Depends(get_current_
     """
     db.delete(current_user)
     db.commit()
-    response.delete_cookie(key="access_token")
+    is_prod = settings.ENVIRONMENT == "production"
+    response.delete_cookie(
+        key="access_token",
+        samesite="none" if is_prod else "lax",
+        secure=is_prod
+    )
     return {"message": "Your account and all associated personal records have been permanently deleted."}
