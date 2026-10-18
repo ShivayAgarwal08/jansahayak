@@ -128,10 +128,44 @@ export interface Citation {
   page_number: number;
 }
 
+export interface ExtractedProfile {
+  state?: string | null;
+  district?: string | null;
+  occupation?: string | null;
+  age?: number | null;
+  gender?: string | null;
+  annual_income?: number | null;
+  owns_cultivable_land?: boolean | null;
+  landholding_raw?: string | null;
+  landholding_acres?: number | null;
+  landholding_notes?: string | null;
+  family_details?: Record<string, any>;
+  housing_type?: string | null;
+  area_type?: string | null;
+  is_bpl?: boolean | null;
+  is_govt_employee?: boolean | null;
+  pays_income_tax?: boolean | null;
+  [key: string]: any;
+}
+
+export interface SuggestedAction {
+  action: string;
+  scheme_slug: string;
+  scheme_name: string;
+  status: string;
+  prefill_data: Record<string, any>;
+}
+
 export interface AssistantResponse {
   answer: string;
   citations: Citation[];
   model: string;
   is_fallback: boolean;
   status: string;
+  ai_provider?: string;
+  extracted_profile?: ExtractedProfile;
+  missing_criteria?: string[];
+  follow_up_prompt?: string | null;
+  eligibility_results?: EligibilityResult[];
+  suggested_action?: SuggestedAction | null;
 }

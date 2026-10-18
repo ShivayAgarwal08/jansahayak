@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams, useNavigate, useLocation } from 'react-router-dom';
 import { api } from '../services/api';
 import { Scheme } from '../types';
 import { Card } from '../components/common/Card';
@@ -17,23 +17,42 @@ import {
   AlertCircle,
   HelpCircle,
   Check,
-  X
+  X,
+  Sparkles
 } from 'lucide-react';
 
 export const ApplicationPrepPage: React.FC = () => {
   const [searchParams] = useSearchParams();
-  const preselectedSlug = searchParams.get('scheme') || 'pm-kisan';
+  const location = useLocation();
+  const prefillData = (location.state as any)?.prefill || null;
+  const preselectedSlug = searchParams.get('scheme') || (location.state as any)?.scheme_slug || 'pm-kisan';
   const { user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
   const [schemes, setSchemes] = useState<Scheme[]>([]);
   const [selectedScheme, setSelectedScheme] = useState<Scheme | null>(null);
-  const [applicantName, setApplicantName] = useState(user?.full_name || '');
-  const [notes, setNotes] = useState('');
+  const [applicantName, setApplicantName] = useState(user?.full_name || prefillData?.applicant_name || '');
+  
+  // Format initial notes from prefill data if available
+  const initialNotes = (() => {
+    if (!prefillData) return '';
+    const parts = ['[Extracted from JanSahayak Assistant]'];
+    if (prefillData.state) parts.push(`State: ${prefillData.state}`);
+    if (prefillData.district) parts.push(`District: ${prefillData.district}`);
+    if (prefillData.occupation) parts.push(`Occupation: ${prefillData.occupation}`);
+    if (prefillData.annual_income) parts.push(`Annual Income: ₹${prefillData.annual_income.toLocaleString('en-IN')}`);
+    if (prefillData.landholding_raw) parts.push(`Landholding: ${prefillData.landholding_raw}`);
+    if (prefillData.housing_type) parts.push(`Housing: ${prefillData.housing_type}`);
+    if (prefillData.area_type) parts.push(`Area: ${prefillData.area_type}`);
+    return parts.join(' | ');
+  })();
+
+  const [notes, setNotes] = useState(initialNotes);
   const [checklist, setChecklist] = useState<Record<string, boolean>>({});
   const [isSaving, setIsSaving] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [hasPrefillAlert, setHasPrefillAlert] = useState(Boolean(prefillData));
 
   useEffect(() => {
     const load = async () => {
@@ -146,6 +165,26 @@ export const ApplicationPrepPage: React.FC = () => {
 
       {notification && (
         <Alert type={notification.type}>{notification.message}</Alert>
+      )}
+
+      {hasPrefillAlert && (
+        <div className="p-4 rounded-xl bg-softmint/80 border border-leaf-300 flex items-start justify-between gap-3 text-sm text-leaf-950">
+          <div className="flex items-start gap-2.5">
+            <Sparkles className="w-5 h-5 text-leaf-700 shrink-0 mt-0.5" />
+            <div>
+              <span className="font-bold">✨ Pre-filled from Assistant Conversation</span>
+              <p className="text-xs text-leaf-800 mt-0.5">
+                Your stated profile details (state, occupation, income, landholding) have been imported into your application notes below. Review and adjust any details before saving or generating your checklist.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => setHasPrefillAlert(false)}
+            className="text-xs font-semibold text-leaf-800 hover:text-leaf-950 underline shrink-0"
+          >
+            Dismiss
+          </button>
+        </div>
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">

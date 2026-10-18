@@ -124,10 +124,15 @@ class ApiClient {
   }
 
   // --- Assistant & RAG ---
-  chatAssistant(query: string, schemeSlug?: string, preferredLanguage: string = 'en') {
+  chatAssistant(query: string, schemeSlug?: string, preferredLanguage: string = 'en', existingProfile?: any) {
     return this.request<any>('/assistant/chat', {
       method: 'POST',
-      body: JSON.stringify({ query, scheme_slug: schemeSlug, preferred_language: preferredLanguage })
+      body: JSON.stringify({
+        query,
+        scheme_slug: schemeSlug,
+        preferred_language: preferredLanguage,
+        existing_profile: existingProfile
+      })
     });
   }
 
