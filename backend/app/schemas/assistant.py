@@ -25,8 +25,16 @@ class AssistantChatResponse(BaseModel):
     is_fallback: bool
     status: str
     ai_provider: Optional[str] = "none"
+    fallback_reason: Optional[str] = None
     extracted_profile: Optional[Dict[str, Any]] = None
     missing_criteria: Optional[List[str]] = None
     follow_up_prompt: Optional[str] = None
     eligibility_results: Optional[List[Dict[str, Any]]] = None
     suggested_action: Optional[Dict[str, Any]] = None
+
+class AssistantStatusResponse(BaseModel):
+    groq_configured: bool
+    groq_model: str
+    ai_provider: str
+    fallback_available: bool
+    status: str

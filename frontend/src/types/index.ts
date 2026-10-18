@@ -163,9 +163,18 @@ export interface AssistantResponse {
   is_fallback: boolean;
   status: string;
   ai_provider?: string;
+  fallback_reason?: string | null;
   extracted_profile?: ExtractedProfile;
   missing_criteria?: string[];
   follow_up_prompt?: string | null;
   eligibility_results?: EligibilityResult[];
   suggested_action?: SuggestedAction | null;
+}
+
+export interface AssistantStatus {
+  groq_configured: boolean;
+  groq_model: string;
+  ai_provider: string;
+  fallback_available: boolean;
+  status: string;
 }

@@ -2,15 +2,35 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import Dict, Any, List
 
+from app.core.config import settings
 from app.db.session import get_db
 from app.models.scheme import Scheme
-from app.schemas.assistant import AssistantChatRequest, AssistantChatResponse, CitationSchema
+from app.schemas.assistant import (
+    AssistantChatRequest,
+    AssistantChatResponse,
+    AssistantStatusResponse,
+    CitationSchema
+)
 from app.services.rag.retrieval import retrieve_grounded_passages
 from app.services.ai.groq_service import generate_grounded_answer
 from app.services.ai.profile_extractor import extract_citizen_profile, generate_profile_followups
 from app.services.eligibility.engine import evaluate_scheme_eligibility
 
 router = APIRouter(prefix="/assistant", tags=["Assistant & RAG"])
+
+@router.get("/status", response_model=AssistantStatusResponse)
+def get_assistant_status():
+    """
+    Check whether Groq AI is securely configured in the environment without exposing credentials.
+    """
+    has_key = bool(settings.GROQ_API_KEY and settings.GROQ_API_KEY.strip())
+    return AssistantStatusResponse(
+        groq_configured=has_key,
+        groq_model=settings.GROQ_MODEL,
+        ai_provider="groq" if has_key else "none",
+        fallback_available=True,
+        status="online" if has_key else "fallback_mode"
+    )
 
 @router.post("/chat", response_model=AssistantChatResponse)
 async def chat_with_assistant(
@@ -78,7 +98,7 @@ async def chat_with_assistant(
                 }
             }
 
-    # 6. Generate grounded answer via Groq LLM (or deterministic fallback if unconfigured)
+    # 6. Generate grounded answer via Groq LLM (or deterministic fallback if unconfigured / error)
     result = await generate_grounded_answer(
         query=query,
         passages=passages,
@@ -109,6 +129,7 @@ async def chat_with_assistant(
         is_fallback=result.get("is_fallback", True),
         status=result.get("status", "fallback_grounded"),
         ai_provider=result.get("ai_provider", "none"),
+        fallback_reason=result.get("fallback_reason"),
         extracted_profile=extracted_profile,
         missing_criteria=missing_criteria,
         follow_up_prompt=follow_up_prompt,

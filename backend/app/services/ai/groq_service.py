@@ -1,7 +1,10 @@
 import httpx
+import logging
 from typing import List, Dict, Any, Optional
 from app.core.config import settings
 from app.services.rag.retrieval import Passage
+
+logger = logging.getLogger("jansahayak.ai.groq")
 
 SYSTEM_PROMPT = """You are JanSahayak's Citizen Welfare AI Assistant, an empathetic, accurate, and trustworthy guide for Indian government welfare schemes.
 
@@ -25,7 +28,8 @@ async def generate_grounded_answer(
     """
     Generate an answer grounded strictly in verified passages and deterministic eligibility results.
     Uses Groq API (llama-3.3-70b-versatile) when credentials are configured.
-    Falls back honestly and safely to deterministic rule synthesis when AI is unavailable.
+    Falls back honestly and safely to deterministic rule synthesis when AI is unavailable or encounters errors.
+    Never exposes API credentials in logs, exceptions, or responses.
     """
     evidence_blocks = []
     citations = []
@@ -92,6 +96,8 @@ async def generate_grounded_answer(
         + "Provide a grounded, citizen-first answer based strictly on the above evidence."
     )
 
+    fallback_reason = "unconfigured"
+
     # 1. Attempt Groq API if configured
     if settings.GROQ_API_KEY and settings.GROQ_API_KEY.strip():
         try:
@@ -121,17 +127,34 @@ async def generate_grounded_answer(
                         "model": settings.GROQ_MODEL,
                         "is_fallback": False,
                         "status": "success",
-                        "ai_provider": "groq"
+                        "ai_provider": "groq",
+                        "fallback_reason": None
                     }
-        except Exception:
-            # Fall through to deterministic fallback if Groq API fails or times out
-            pass
+                else:
+                    fallback_reason = f"provider_http_{response.status_code}"
+                    logger.warning(
+                        f"Groq API returned HTTP {response.status_code}. Falling back to deterministic rule synthesis. (Response: {response.text[:150]})"
+                    )
+        except httpx.TimeoutException:
+            fallback_reason = "provider_timeout"
+            logger.warning("Groq API request timed out after 20.0s. Falling back to deterministic rule synthesis.")
+        except httpx.ConnectError:
+            fallback_reason = "provider_connect_error"
+            logger.warning("Could not connect to Groq API. Falling back to deterministic rule synthesis.")
+        except Exception as e:
+            fallback_reason = f"provider_exception_{type(e).__name__}"
+            logger.warning(f"Groq API call encountered {type(e).__name__}: {str(e)[:150]}. Falling back to deterministic rule synthesis.")
 
     # 2. Deterministic Non-Hallucinatory Fallback
     # Transparently inform citizen that AI is in offline/fallback mode and present exact rule synthesis
-    lines = [
-        "> ℹ️ **Notice: Live AI generation is currently offline (API key unconfigured or provider unreachable). JanSahayak is displaying verified deterministic rule records.**\n"
-    ]
+    if fallback_reason == "unconfigured":
+        notice_line = "> ℹ️ **Notice: Live AI generation is currently offline (API key unconfigured). JanSahayak is displaying verified deterministic rule records.**\n"
+    elif fallback_reason == "provider_timeout":
+        notice_line = "> ⚠️ **Notice: Live AI service timed out. JanSahayak has safely engaged verified deterministic rule records.**\n"
+    else:
+        notice_line = f"> ⚠️ **Notice: Live AI provider encountered a temporary error ({fallback_reason}). JanSahayak has safely engaged verified deterministic rule records.**\n"
+
+    lines = [notice_line]
 
     if eligibility_evaluations:
         lines.append("### 📋 Scheme Eligibility Assessment")
@@ -179,5 +202,6 @@ async def generate_grounded_answer(
         "model": "rule-grounded-deterministic-fallback",
         "is_fallback": True,
         "status": "fallback_grounded",
-        "ai_provider": "none"
+        "ai_provider": "none",
+        "fallback_reason": fallback_reason
     }

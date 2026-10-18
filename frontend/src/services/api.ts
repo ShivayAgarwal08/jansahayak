@@ -136,6 +136,10 @@ class ApiClient {
     });
   }
 
+  getAssistantStatus() {
+    return this.request<any>('/assistant/status');
+  }
+
   // --- Voice & Bhashini ---
   getVoiceStatus() {
     return this.request<any>('/voice/status');

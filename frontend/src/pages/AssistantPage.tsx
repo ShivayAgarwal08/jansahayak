@@ -59,19 +59,24 @@ export const AssistantPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [voiceStatus, setVoiceStatus] = useState<any>(null);
+  const [assistantStatus, setAssistantStatus] = useState<any>(null);
   const [sessionProfile, setSessionProfile] = useState<ExtractedProfile>({});
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const fetchVoiceStatus = async () => {
+    const fetchStatus = async () => {
       try {
-        const status = await api.getVoiceStatus();
-        setVoiceStatus(status);
+        const [vStatus, aStatus] = await Promise.all([
+          api.getVoiceStatus().catch(() => null),
+          api.getAssistantStatus().catch(() => null)
+        ]);
+        if (vStatus) setVoiceStatus(vStatus);
+        if (aStatus) setAssistantStatus(aStatus);
       } catch (err) {
-        console.error('Could not fetch voice status:', err);
+        console.error('Could not fetch status:', err);
       }
     };
-    fetchVoiceStatus();
+    fetchStatus();
   }, []);
 
   useEffect(() => {
@@ -221,8 +226,8 @@ export const AssistantPage: React.FC = () => {
 
         {/* Real-time Status Badge */}
         <div className="text-right">
-          <Badge variant="verified" size="sm">
-            {voiceStatus?.configured ? 'Bhashini Voice Online' : 'Deterministic Rules & Browser Speech'}
+          <Badge variant={assistantStatus?.groq_configured ? "verified" : "neutral"} size="sm">
+            {assistantStatus?.groq_configured ? 'Groq Llama-3.3-70B Online' : 'Deterministic Rules & Browser Speech'}
           </Badge>
           <p className="text-[11px] text-navy-700/60 mt-0.5">
             Strict Non-Hallucinatory Grounding
