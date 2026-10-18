@@ -136,7 +136,13 @@ async def generate_grounded_answer(
 
     if clean_key:
         candidate_models = [configured_model]
-        for fb in ["llama-3.3-70b-versatile", "llama-3.1-8b-instant", "llama3-70b-8192"]:
+        for fb in [
+            "openai/gpt-oss-120b",
+            "openai/gpt-oss-20b",
+            "qwen/qwen3.8-27b",
+            "llama-3.3-70b-versatile",
+            "llama-3.1-8b-instant"
+        ]:
             if fb not in candidate_models:
                 candidate_models.append(fb)
 
@@ -162,6 +168,11 @@ async def generate_grounded_answer(
                     if response.status_code == 200:
                         data = response.json()
                         answer_text = data["choices"][0]["message"]["content"]
+                        # Strip thinking tags if returned by reasoning models
+                        if "<think>" in answer_text and "</think>" in answer_text:
+                            parts = answer_text.split("</think>", 1)
+                            if len(parts) > 1 and parts[1].strip():
+                                answer_text = parts[1].strip()
                         return {
                             "answer": answer_text,
                             "citations": citations,
@@ -171,12 +182,12 @@ async def generate_grounded_answer(
                             "ai_provider": "groq",
                             "fallback_reason": None
                         }
-                    elif response.status_code == 404:
+                    elif response.status_code in [400, 404]:
                         safe_err = extract_safe_error_message(response, clean_key)
                         logger.warning(
-                            f"Groq API returned HTTP 404 for model '{model_candidate}': {safe_err}. Trying fallback candidate..."
+                            f"Groq API returned HTTP {response.status_code} for model '{model_candidate}': {safe_err}. Trying fallback candidate..."
                         )
-                        fallback_reason = "provider_http_404"
+                        fallback_reason = f"provider_http_{response.status_code}"
                         continue
                     else:
                         fallback_reason = f"provider_http_{response.status_code}"
