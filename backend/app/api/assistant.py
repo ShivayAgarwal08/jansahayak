@@ -120,8 +120,19 @@ async def chat_with_assistant(
                 extracted_profile[k] = v
 
     # 2. Retrieve top verified passages using stopword filtering & domain intent matching
+    # Multi-turn contextualization: if user is answering a follow-up, incorporate confirmed profile facts
+    search_query = query
+    if req.existing_profile:
+        context_cues = []
+        if req.existing_profile.get("occupation"):
+            context_cues.append(str(req.existing_profile["occupation"]))
+        if req.existing_profile.get("housing_type"):
+            context_cues.append(str(req.existing_profile["housing_type"]))
+        if context_cues:
+            search_query = f"{query} {' '.join(context_cues)}"
+
     passages = retrieve_grounded_passages(
-        query=query,
+        query=search_query,
         db=db,
         limit=4,
         target_scheme_slug=req.scheme_slug

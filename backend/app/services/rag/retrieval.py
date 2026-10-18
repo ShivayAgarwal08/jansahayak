@@ -25,7 +25,7 @@ STOPWORDS = {
     "third", "double", "triple",
     # Generic conversational filler words (intent words like eligible/benefit/apply/exclusion are preserved!)
     "government", "govt", "scheme", "schemes", "help", "please", "know", "information", "details",
-    "might", "annual", "yearly", "monthly", "per"
+    "might", "annual", "yearly", "monthly", "per", "get", "buy", "give", "want", "need", "like", "take", "also", "new"
 }
 
 # Sub-Intent definitions for high-precision ranking
@@ -243,6 +243,15 @@ def retrieve_grounded_passages(
     has_other_domain = any(slug != "pm-kisan" for slug in matched_domains.keys())
     is_agri_query = ("pm-kisan" in matched_domains or any(w in query_str_lower for w in ["farmer", "kisan", "cultivator", "bigha", "land"])) and not has_other_domain
 
+    # Build set of generic intent modifier tokens
+    all_intent_tokens = set()
+    for idata in QUERY_INTENTS.values():
+        for qk in idata["query_keywords"]:
+            for w in re.findall(r"\w+", qk.lower()):
+                if len(w) > 2:
+                    all_intent_tokens.add(w)
+    substantive_tokens = [t for t in meaningful_tokens if t not in all_intent_tokens]
+
     # 1. Attempt vector search over ingested official DocumentChunk records
     db_chunks = []
     try:
@@ -278,33 +287,42 @@ def retrieve_grounded_passages(
             score = vec_sim * 30.0
             reasons = [f"Semantic vector match ({vec_sim:.2f})"]
 
+            content_lower = chunk.content.lower()
+            section_lower = (chunk.section_title or "").lower()
+            content_words = set(re.findall(r"\w+", content_lower))
+            section_words = set(re.findall(r"\w+", section_lower))
+            chunk_kw_set = set(chunk.keywords or [])
+
+            # Substantive token hits (civic entities/nouns, excluding generic intent modifiers)
+            substantive_hits = sum(1 for t in substantive_tokens if (t in content_words or t in chunk_kw_set or t in section_words))
+            has_scheme_affinity = (scheme.slug in matched_domains) or (substantive_hits >= 1 and (vec_sim >= 0.45 or substantive_hits >= 2))
+
             # Domain intent boost
             if scheme.slug in matched_domains:
                 intent = DOMAIN_INTENTS[scheme.slug]
                 score += intent["boost"]
                 reasons.append(f"{intent['reason']} (matched: {', '.join(matched_domains[scheme.slug])})")
 
-            # Sub-intent boost (eligibility vs exclusions vs benefits vs application)
-            content_lower = chunk.content.lower()
-            section_lower = (chunk.section_title or "").lower()
-            for intent_name, intent_data in QUERY_INTENTS.items():
-                if any(qk in query_str_lower for qk in intent_data["query_keywords"]):
-                    title_hits = [bk for bk in intent_data["chunk_keywords"] if bk in section_lower]
-                    content_hits = [bk for bk in intent_data["chunk_keywords"] if bk in content_lower]
-                    if title_hits:
-                        score += intent_data["boost"]
-                        reasons.append(f"{intent_data['reason']} in section title '{chunk.section_title}'")
-                    elif content_hits:
-                        score += intent_data["boost"] * 0.6
-                        reasons.append(f"{intent_data['reason']} in official guideline text")
+            # Sub-intent boost (eligibility vs exclusions vs benefits vs application) - only if scheme affinity exists
+            if has_scheme_affinity:
+                for intent_name, intent_data in QUERY_INTENTS.items():
+                    if any(qk in query_str_lower for qk in intent_data["query_keywords"]):
+                        title_hits = [bk for bk in intent_data["chunk_keywords"] if bk in section_lower]
+                        content_hits = [bk for bk in intent_data["chunk_keywords"] if bk in content_lower]
+                        if title_hits:
+                            score += intent_data["boost"]
+                            reasons.append(f"{intent_data['reason']} in section title '{chunk.section_title}'")
+                        elif content_hits:
+                            score += intent_data["boost"] * 0.6
+                            reasons.append(f"{intent_data['reason']} in official guideline text")
 
-            # Keyword and section matching
+            # Keyword and section matching with whole-word token sets
             token_hits = 0
             for t in meaningful_tokens:
-                if t in content_lower or (chunk.keywords and t in chunk.keywords):
+                if t in content_words or t in chunk_kw_set:
                     score += 4.0
                     token_hits += 1
-                if t in section_lower:
+                if t in section_words:
                     score += 6.0
                     token_hits += 1
 
@@ -318,7 +336,7 @@ def retrieve_grounded_passages(
                 elif scheme.slug == "ignoaps" and "ignoaps" not in matched_domains:
                     score = -100.0
 
-            if score > 5.0 or (vec_sim > 0.35 and score > 0):
+            if has_scheme_affinity and (score > 6.0 or (vec_sim > 0.35 and score > 0)):
                 passage = Passage(
                     scheme_slug=scheme.slug,
                     scheme_name=scheme.name,
@@ -386,14 +404,18 @@ def retrieve_grounded_passages(
             elif p.scheme_slug == "ignoaps" and "ignoaps" not in matched_domains:
                 score = -100
 
-        if score > 0:
+        text_words = set(re.findall(r"\w+", text))
+        substantive_hits = sum(1 for t in substantive_tokens if t in text_words)
+        has_scheme_affinity = (p.scheme_slug in matched_domains) or (substantive_hits >= 2)
+
+        if has_scheme_affinity and score > 0:
             p.match_reasons = reasons
             scored_passages.append((score, p))
 
     scored_passages.sort(key=lambda x: x[0], reverse=True)
     results = [item[1] for item in scored_passages[:limit]]
 
-    if not results:
+    if not results and target_scheme_slug:
         results = all_passages[:limit]
 
     return results

@@ -1,7 +1,7 @@
 import pytest
 import os
 import httpx
-from unittest.mock import patch, AsyncMock
+from unittest.mock import patch, AsyncMock, MagicMock
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -159,7 +159,8 @@ async def test_groq_401_invalid_key_handling():
     passages = [
         MockPassage("pm-kisan", "PM-KISAN", "PM-KISAN Guidelines", "Dept of Agriculture", "https://pmkisan.gov.in", "Financial benefit: ₹6,000 per year")
     ]
-    mock_err_res = AsyncMock(status_code=401, text='{"error": {"message": "Invalid API Key"}}')
+    mock_err_res = MagicMock(status_code=401, text='{"error": {"message": "Invalid API Key"}}')
+    mock_err_res.json.return_value = {"error": {"message": "Invalid API Key"}}
     with patch("app.core.config.settings.GROQ_API_KEY", "gsk_invalid_key"):
         with patch("httpx.AsyncClient.post", return_value=mock_err_res):
             result = await generate_grounded_answer(
@@ -180,7 +181,8 @@ async def test_groq_429_rate_limit_handling():
     passages = [
         MockPassage("pm-kisan", "PM-KISAN", "PM-KISAN Guidelines", "Dept of Agriculture", "https://pmkisan.gov.in", "Financial benefit: ₹6,000 per year")
     ]
-    mock_err_res = AsyncMock(status_code=429, text='{"error": {"message": "Rate limit reached"}}')
+    mock_err_res = MagicMock(status_code=429, text='{"error": {"message": "Rate limit reached"}}')
+    mock_err_res.json.return_value = {"error": {"message": "Rate limit reached"}}
     with patch("app.core.config.settings.GROQ_API_KEY", "gsk_valid_key"):
         with patch("httpx.AsyncClient.post", return_value=mock_err_res):
             result = await generate_grounded_answer(

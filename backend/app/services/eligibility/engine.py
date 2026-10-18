@@ -90,10 +90,12 @@ def evaluate_scheme_eligibility(scheme: Any, profile: Dict[str, Any]) -> Eligibi
 
     # 2. General Exclusions Check: Government Employment & Income Tax Payee
     is_govt_emp = profile.get("is_govt_employee")
+    if is_govt_emp is None:
+        is_govt_emp = profile.get("is_regular_govt_employee")
     pays_tax = profile.get("pays_income_tax")
 
     # If scheme excludes government employees
-    if rules.get("is_govt_employee") is False:
+    if rules.get("is_govt_employee") is False or rules.get("is_regular_govt_employee") is False:
         if is_govt_emp is True:
             unsatisfied.append({
                 "criterion": "Non-Government Employee Exclusion",

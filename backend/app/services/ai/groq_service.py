@@ -38,9 +38,16 @@ def get_clean_groq_model() -> str:
 def extract_safe_error_message(response: Any, api_key: Optional[str]) -> str:
     err_text = ""
     try:
-        data = response.json() if callable(getattr(response, "json", None)) else {}
-        if isinstance(data, dict):
-            err_text = data.get("error", {}).get("message", "")
+        json_fn = getattr(response, "json", None)
+        if callable(json_fn):
+            raw_data = json_fn()
+            if hasattr(raw_data, "close") and callable(raw_data.close):
+                raw_data.close()
+                data = {}
+            else:
+                data = raw_data
+            if isinstance(data, dict):
+                err_text = data.get("error", {}).get("message", "")
     except Exception:
         pass
     if not err_text:

@@ -378,3 +378,87 @@ def test_deterministic_eligibility_all_eight_schemes(db_session):
     assert res_b.status == "ineligible"
     res_c = evaluate_scheme_eligibility(s, {})
     assert res_c.status == "possibly_eligible"
+
+def test_adversarial_and_abstention_retrieval(db_session):
+    """
+    Test retrieval behavior on adversarial, misspelled, transliterated,
+    and out-of-scope queries. Verifies honest abstention on low-evidence queries.
+    """
+    # 1. Honest Abstention on Out-of-Scope Queries (No government scheme applies)
+    out_of_scope_queries = [
+        "Can I get a government subsidy to buy a private helicopter or Tesla car?",
+        "How do I cook Italian pasta and garlic bread recipe?",
+        "Quantum computing cryptocurrency token launch guidelines"
+    ]
+    for q in out_of_scope_queries:
+        passages = retrieve_grounded_passages(query=q, db=db_session, limit=3)
+        assert len(passages) == 0, f"Expected 0 passages for out-of-scope query '{q}', got {len(passages)}"
+
+    # 2. Transliterated / Hindi Civic Keywords
+    transliterated_queries = [
+        ("kisan samman nidhi kist kitna milega", "pm-kisan"),
+        ("beti ke liye sukanya samriddhi khata kaise khole", "sukanya-samriddhi-yojana"),
+        ("rehri thela lagane wale ko loan kaise milta hai", "pm-svanidhi")
+    ]
+    for query, expected_slug in transliterated_queries:
+        passages = retrieve_grounded_passages(query=query, db=db_session, limit=3)
+        assert len(passages) > 0, f"Expected matches for transliterated query '{query}'"
+        slugs = [p.scheme_slug for p in passages]
+        assert expected_slug in slugs, f"Expected {expected_slug} in retrieved slugs for '{query}', got {slugs}"
+
+    # 3. Misspelled Scheme Names
+    misspelled_queries = [
+        ("sukany samridhi beti age limit", "sukanya-samriddhi-yojana"),
+        ("ayushmaan bharat 70 saal golden card", "ayushman-bharat-pmjay"),
+        ("vishwakarma tool kit incentive carpenter", "pm-vishwakarma")
+    ]
+    for query, expected_slug in misspelled_queries:
+        passages = retrieve_grounded_passages(query=query, db=db_session, limit=3)
+        assert len(passages) > 0, f"Expected matches for misspelled query '{query}'"
+        assert passages[0].scheme_slug == expected_slug, f"Expected top-1 {expected_slug} for '{query}', got {passages[0].scheme_slug}"
+
+def test_contradictory_and_exclusion_override_eligibility(db_session):
+    """
+    Verify that statutory exclusions strictly override positive criteria in deterministic evaluation.
+    LLMs or conflicting profile claims cannot override exclusionary facts.
+    """
+    schemes = {s.slug: s for s in db_session.query(Scheme).all()}
+
+    # Case 1: PM-KISAN - Owns 10 acres of cultivable land (positive), BUT is an Income Tax Payer
+    kisan = schemes["pm-kisan"]
+    res = evaluate_scheme_eligibility(kisan, {
+        "owns_cultivable_land": True,
+        "land_size_acres": 10.0,
+        "pays_income_tax": True,
+        "is_govt_employee": False
+    })
+    assert res.status == "ineligible"
+    assert any("tax" in unc["criterion"].lower() for unc in res.unsatisfied_conditions)
+
+    # Case 2: PM-KISAN - Owns cultivable land, BUT is a Government Officer
+    res_officer = evaluate_scheme_eligibility(kisan, {
+        "owns_cultivable_land": True,
+        "land_size_acres": 2.5,
+        "pays_income_tax": False,
+        "is_govt_employee": True
+    })
+    assert res_officer.status == "ineligible"
+    assert any("government" in unc["criterion"].lower() for unc in res_officer.unsatisfied_conditions)
+
+    # Case 3: PMMVY - Pregnant woman aged 24 (positive), BUT is a regular PSU/Government employee
+    pmmvy = schemes["pmmvy"]
+    res_pmmvy = evaluate_scheme_eligibility(pmmvy, {
+        "gender": "female",
+        "age": 24,
+        "is_govt_employee": True
+    })
+    assert res_pmmvy.status == "ineligible"
+
+    # Case 4: IGNOAPS - Senior aged 75 (positive), BUT not BPL / above poverty line
+    ignoaps = schemes["ignoaps"]
+    res_pension = evaluate_scheme_eligibility(ignoaps, {
+        "age": 75,
+        "is_bpl": False
+    })
+    assert res_pension.status == "ineligible"
+
