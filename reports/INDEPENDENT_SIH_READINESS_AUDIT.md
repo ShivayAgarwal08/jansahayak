@@ -40,24 +40,41 @@ This independent audit conducts an empirical, zero-assumption verification of th
 
 ### Git Repository State
 - **Branch:** `main`
-- **HEAD Commit:** `8e117d9` (`fix(rag): improve retrieval relevance, sub-intent ranking, and eligibility tri-state resolution`)
-- **Remote Tracking:** `origin/main` at `https://github.com/ShivayAgarwal08/JANSAHAYAK.git`
-- **Working Tree:** Fully tested and staged for publication (`M backend/app/api/assistant.py`, `M backend/app/api/health.py`, `M backend/app/services/ai/groq_service.py`, `M backend/app/services/eligibility/engine.py`, `M backend/app/services/rag/retrieval.py`, `M backend/tests/test_groq_integration.py`, `M backend/tests/test_rag_benchmark_and_sources.py`).
+- **HEAD Commit:** `7866519` (`docs(audit): publish independent SIH readiness audit, harden retrieval abstention, and fix eligibility exclusions`)
+- **Remote Tracking:** `origin/main` at `https://github.com/ShivayAgarwal08/JANSAHAYAK.git` (Commit `7866519` verified present on GitHub)
+- **Working Tree:** Clean (`nothing to commit, working tree clean`).
+
+### Deployed Revision Verification (Cryptographic Proof)
+- **Render Production Deployment:** **CONFIRMED LIVE & DEPLOYED**
+- **Deployed Git Commit:** `786651997a974e0b9e6c7ad64c35ac7e76366a9d`
+- **Verification Method:** Direct probe of `GET https://jansahayak-backend-kvuq.onrender.com/api/health` which extracts the runtime build environment variable `RENDER_GIT_COMMIT`.
+- **Verified Response Body:**
+  ```json
+  {
+    "status": "healthy",
+    "service": "JanSahayak Civic Platform API",
+    "version": "1.0.0",
+    "git_commit": "786651997a974e0b9e6c7ad64c35ac7e76366a9d",
+    "timestamp": "2026-10-18T22:55:59.630252+00:00"
+  }
+  ```
+- **Conclusion:** Render is verified running the latest tested commit `7866519`. No older revisions or stale containers remain active.
 
 ### Live Production Endpoints Probed
-*Timestamp: 2026-10-18T22:50:25Z — Target: `https://jansahayak-backend-kvuq.onrender.com`*
+*Timestamp: 2026-10-18T22:56:05Z — Target: `https://jansahayak-backend-kvuq.onrender.com`*
 
 | Endpoint | Method | HTTP Code | Response Summary (Sanitized) | Status |
 | :--- | :---: | :---: | :--- | :---: |
-| `/api/health` | GET | `200` | `{"status": "healthy", "service": "JanSahayak Civic Platform API", "version": "1.0.0"}` | **PASS** |
+| `/api/health` | GET | `200` | Deployed Commit `786651997a974e0b9e6c7ad64c35ac7e76366a9d`, status `healthy` | **PASS** |
 | `/api/health/db` | GET | `200` | `{"status": "healthy", "database": "connected", "dialect": "postgresql"}` | **PASS** |
-| `/openapi.json` | GET | `200` | `42` routes registered across all modules | **PASS** |
-| `/api/assistant/documents` | GET | `200` | 8 official schemes active (`pm-kisan`, `pmay-g`, `ayushman-bharat-pmjay`, etc.), 20 total chunks | **PASS** |
-| `/api/assistant/search-documents` | GET | `200` | Query `farmer landholding eligibility` returns 3 top PM-KISAN chunks (pages 1, 3, 2) with cosine similarities `0.967`, `0.706`, `0.945` | **PASS** |
-| `/api/assistant/status` | GET | `200` | `{"groq_configured": true, "groq_model": "llama-3.3-70b-versatile", "ai_provider": "groq", "fallback_available": true}` | **PASS** |
+| `/openapi.json` | GET | `200` | `42` registered API routes across auth, schemes, assistant, voice, whatsapp, etc. | **PASS** |
+| `/api/assistant/documents` | GET | `200` | 8 official scheme guidelines seeded, 20 chunks, physical page numbers 1–4 verified | **PASS** |
+| `/api/assistant/search-documents` | GET | `200` | Query `farmer landholding eligibility` returns 3 top PM-KISAN chunks (pages 1, 2, 3) with similarity scores `0.967`, `0.945`, `0.706` | **PASS** |
+| `/api/assistant/status` | GET | `200` | `{"groq_configured": true, "groq_model": "llama-3.3-70b-versatile", "ai_provider": "groq", "status": "online"}` | **PASS** |
 | `/api/whatsapp/status` | GET | `200` | `{"provider": "Meta WhatsApp Cloud API", "configured": false, "status": "awaiting_credentials"}` | **BLOCKED** |
 | `/api/voice/status` | GET | `200` | `{"provider": "Bhashini (National Language Translation Mission)", "configured": false, "status": "awaiting_credentials"}` | **BLOCKED** |
-| `/api/assistant/chat` | POST | `200` | Returns live grounded response via `groq` (`llama-3.3-70b-versatile`) with 4 citations and deterministic rule evaluation | **PASS** |
+| `/api/assistant/chat` (PM-KISAN Query) | POST | `200` | Grounded inference via `groq` (`openai/gpt-oss-120b`), `is_fallback: false`, 4 citations, deterministic evaluation attached | **PASS** |
+| `/api/assistant/chat` (Adversarial Query) | POST | `200` | Query *"subsidy to buy private helicopter or Tesla"* returns 0 citations and honest refusal stating no such subsidy exists | **PASS** |
 
 ---
 
