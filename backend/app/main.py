@@ -7,7 +7,11 @@ from app.core.config import settings
 from app.db.session import engine, Base, SessionLocal
 from app.db.seed_data import seed_database
 from app.services.rag.seed_corpus import seed_official_documents_corpus
+from app.db.migrations import ensure_schema_compatibility
+import logging
 import app.models  # ensure models are registered with Base.metadata
+
+logger = logging.getLogger("jansahayak.startup")
 
 # Import API Routers
 from app.api.health import router as health_router
@@ -26,14 +30,39 @@ from app.api.whatsapp import router as whatsapp_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: Ensure database tables exist & seed initial verified schemes and official RAG corpus
-    Base.metadata.create_all(bind=engine)
-    db = SessionLocal()
+    # Startup sequence:
+    # 1. Ensure all database tables exist
     try:
-        seed_database(db)
-        seed_official_documents_corpus(db)
+        Base.metadata.create_all(bind=engine)
+    except Exception as e:
+        logger.error(f"Error during Base.metadata.create_all: {e}", exc_info=True)
+
+    # 2. Non-destructive schema evolution: ensure required columns exist on existing tables
+    try:
+        ensure_schema_compatibility(engine)
+    except Exception as e:
+        logger.error(f"Error during ensure_schema_compatibility: {e}", exc_info=True)
+
+    # 3. Seed schemes and initial admin in an isolated session with explicit rollback
+    db_schemes = SessionLocal()
+    try:
+        seed_database(db_schemes)
+    except Exception as e:
+        db_schemes.rollback()
+        logger.error(f"Error during scheme seeding: {e}", exc_info=True)
     finally:
-        db.close()
+        db_schemes.close()
+
+    # 4. Seed official scheme guidelines corpus in an independent session with explicit rollback
+    db_corpus = SessionLocal()
+    try:
+        seed_official_documents_corpus(db_corpus)
+    except Exception as e:
+        db_corpus.rollback()
+        logger.error(f"Error during official documents corpus seeding: {e}", exc_info=True)
+    finally:
+        db_corpus.close()
+
     yield
     # Shutdown logic if needed
 

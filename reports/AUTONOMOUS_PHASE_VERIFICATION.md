@@ -19,8 +19,9 @@
 | **Phase B: Idempotency & Grounding** | **COMPLETE** | **PASS (Local)** | **PASS** | Document seeding is fully per-document idempotent (`scheme_id` + `source_url`). LLM cannot override deterministic rules. |
 | **Phase C: Multilingual Voice (Bhashini)** | **COMPLETE** | **BLOCKED (Credentials Pending)** | **PASS (8 Mocked Tests)** | STT (`/voice/stt`), TTS (`/voice/tts`), translation (`/voice/translate`). Fallbacks to browser speech. Bhojpuri excluded from standard verified set. |
 | **Phase D: WhatsApp Cloud API Integration** | **COMPLETE** | **BLOCKED (Credentials Pending)** | **PASS (8 Mocked Tests)** | Meta webhook verification, HMAC-SHA256 signature check, idempotency cache, RAG & eligibility pipeline routing, outbound Graph API dispatch. |
-| **Backend Test Suite (Pytest)** | **63 PASSED, 2 SKIPPED** (100% Pass Rate across 65 tests) | **PASS** | **PASS** | All unit, integration, RAG, Bhashini, and WhatsApp tests passing. |
-| **Frontend Production Build** | **COMPLETE** | **PASS** | **PASS** | TypeScript + Vite compiled with 0 errors. |
+| **Render Startup Crash & Schema Evolution** | **COMPLETE** | **FIXED & TESTED** | **PASS (4 Tests)** | Identified FIRST error (`psycopg.errors.UndefinedColumn` swallowed without rollback). Added non-destructive schema migration, session transaction boundaries, and per-doc rollback. |
+| **Backend Test Suite (Pytest)** | **67 PASSED, 2 SKIPPED** (100% Pass Rate across 69 tests) | **PASS** | **PASS** | All unit, integration, RAG, Bhashini, WhatsApp, and startup regression tests passing. |
+| **Frontend Production Build** | **COMPLETE** | **PASS** | **PASS** | TypeScript + Vite compiled with 0 errors in 4.43s. |
 
 ---
 
@@ -193,3 +194,79 @@ backend/tests/test_whatsapp_integration.py::test_inbound_unsupported_media_advis
 | **WhatsApp** | `WHATSAPP_ACCESS_TOKEN` | System user token for Meta Graph API messaging | Pending manual configuration |
 | **WhatsApp** | `WHATSAPP_PHONE_NUMBER_ID` | Meta Business Phone Number ID | Pending manual configuration |
 | **WhatsApp** | `WHATSAPP_APP_SECRET` | Meta App Secret for HMAC-SHA256 signature checks | Pending manual configuration |
+
+---
+
+## 8. Render Production Startup Crash: Root Cause Diagnosis & Safe Resolution
+
+### 1. Diagnosis: The Real "First" Exception
+The crash reported during Render application startup surfaced as:
+```text
+sqlalchemy.exc.InternalError: (psycopg.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end of transaction block
+...
+File "backend/app/services/rag/seed_corpus.py", in seed_official_documents_corpus
+  scheme = db.query(Scheme).filter(Scheme.slug == doc_data["scheme_slug"]).first()
+```
+
+As suspected, this was a **secondary symptom** of PostgreSQL's strict transaction isolation. In PostgreSQL via `psycopg`, any SQL exception puts the entire backend transaction into an aborted state until `ROLLBACK` is issued.
+
+The **TRUE FIRST EXCEPTION** occurred during the initial `seed_database(db)` execution:
+1. When the production Neon PostgreSQL database was first provisioned or migrated in earlier commits, the tables `knowledge_documents` and `document_chunks` were either created with an older schema or created by a partial definition missing the columns added in Step 3 (`document_reference`, `retrieval_date`, `doc_type`, `ocr_status` on `knowledge_documents`, and `section_title`, `embedding`, `token_count` on `document_chunks`).
+2. SQLAlchemy's `Base.metadata.create_all(bind=engine)` is strictly **additive for missing tables only**; it never executes `ALTER TABLE` to add new columns to existing tables.
+3. In `seed_data.py`, lines 431-436 previously contained an un-isolated duplicate call:
+   ```python
+   try:
+       from app.services.rag.seed_corpus import seed_official_documents_corpus
+       seed_official_documents_corpus(db)
+   except Exception as e:
+       logger.warning("Could not auto-seed official documents corpus...")
+       pass  # <-- BUG: Swallowed without db.rollback()!
+   ```
+4. Because the columns were missing, the first query executed against `knowledge_documents` failed with:
+   `psycopg.errors.UndefinedColumn: column knowledge_documents.document_reference does not exist`
+5. The `pass` block swallowed this error **without issuing `db.rollback()`**.
+6. The shared SQLAlchemy session `db` was returned to `main.py` in an aborted state.
+7. Next in `main.py`, the explicit lifespan call `seed_official_documents_corpus(db)` reused the poisoned transaction, immediately raising `psycopg.errors.InFailedSqlTransaction` when attempting to query `db.query(Scheme)`.
+
+---
+
+### 2. Root Cause Summary
+1. **Schema Drift**: Neon PostgreSQL had existing tables without the latest RAG columns, and `create_all()` did not update them.
+2. **Missing Transaction Rollback**: Swallowing exceptions without `db.rollback()` permanently poisoned the database session in PostgreSQL.
+3. **Session Coupling**: Both scheme seeding and corpus seeding were sharing a single session passed across multiple subsystems in `main.py`.
+
+---
+
+### 3. Architecture Fix & Implementation Details
+
+#### A. Non-Destructive Schema Evolution (`backend/app/db/migrations.py`)
+- Created `ensure_schema_compatibility(engine)` using SQLAlchemy `inspect(engine)` and raw `ALTER TABLE ... ADD COLUMN IF NOT EXISTS` statements.
+- Added missing columns safely:
+  - `knowledge_documents`: `document_reference`, `retrieval_date`, `doc_type`, `ocr_status`.
+  - `document_chunks`: `section_title`, `embedding`, `token_count`.
+- **Zero data loss**: Never drops tables, never truncates data, never resets Neon database.
+
+#### B. Strict Transaction Boundaries & Decoupled Sessions (`backend/app/main.py`)
+- Refactored `lifespan` into four isolated startup phases:
+  1. `Base.metadata.create_all(bind=engine)` — guarantees tables exist.
+  2. `ensure_schema_compatibility(engine)` — guarantees column compatibility on existing tables.
+  3. `seed_database(db_schemes)` — executed in its own dedicated `SessionLocal()` with explicit `try...finally: db_schemes.close()` and `db_schemes.rollback()` on failure.
+  4. `seed_official_documents_corpus(db_corpus)` — executed in a brand-new, isolated `SessionLocal()` with per-document rollback.
+- Removed the redundant, un-isolated corpus call from `seed_data.py`.
+
+#### C. Per-Document Transaction Isolation (`backend/app/services/rag/ingestion.py` & `seed_corpus.py`)
+- Added per-document `try...except Exception as doc_err: db.rollback()` in `seed_official_documents_corpus()`. If one document fails (e.g. invalid slug), its transaction rolls back immediately and does not abort the rest of the corpus.
+- In `ingest_document()`, wrapped chunk insertions with `try...except: db.rollback(); raise` to ensure uncommitted work does not poison the session.
+
+---
+
+### 4. Regression Test Suite (`backend/tests/test_startup_and_migrations.py`)
+Added 4 comprehensive regression tests:
+1. `test_ensure_schema_compatibility_adds_missing_columns`: Creates a legacy schema missing columns, runs migration, verifies all columns are added and queryable.
+2. `test_transaction_rollback_on_failed_seed_operation`: Simulates a database failure during seeding, verifies `db.rollback()` occurs, and confirms the session can immediately run subsequent queries without `InFailedSqlTransaction`.
+3. `test_idempotent_repeated_seeding`: Runs full seeding 3 times consecutively on the same database, verifying identical row counts and 0 constraint errors.
+4. `test_partial_seeding_recovery`: Tests recovery after an interrupted or partial seed operation.
+
+**Results**: All 4 tests passed in 6.12s.  
+**Full Test Suite**: **67 PASSED, 2 SKIPPED** across all 69 backend tests.  
+**Frontend Production Build**: **PASSED** (0 errors, 4.43s).

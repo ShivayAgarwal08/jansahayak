@@ -391,46 +391,43 @@ def seed_database(db: Session):
     """
     Populate database with initial verified government schemes and default admin user idempotently.
     """
-    for data in VERIFIED_SCHEMES:
-        data_copy = dict(data)
-        sources_data = data_copy.pop("sources", [])
-        
-        existing_scheme = db.query(Scheme).filter(Scheme.slug == data_copy["slug"]).first()
-        if not existing_scheme:
-            scheme = Scheme(**data_copy)
-            db.add(scheme)
-            db.flush()
-
-            for s in sources_data:
-                source = SchemeSource(
-                    scheme_id=scheme.id,
-                    source_title=s["source_title"],
-                    source_url=s["source_url"],
-                    issuing_authority=s["issuing_authority"],
-                    document_reference=s.get("document_reference")
-                )
-                db.add(source)
-            db.commit()
-
-    # Check for default admin user
-    admin_user = db.query(User).filter(User.email == "admin@jansahayak.gov.in").first()
-    if not admin_user:
-        admin = User(
-            full_name="JanSahayak Nodal Officer",
-            email="admin@jansahayak.gov.in",
-            phone="9876543210",
-            hashed_password=hash_password("JanSahayakAdmin@2026"),
-            role="admin",
-            preferred_language="en",
-            state="Delhi",
-            is_active=True
-        )
-        db.add(admin)
-        db.commit()
-
-    # Seed official government scheme documents corpus into KnowledgeDocument and DocumentChunk tables
     try:
-        from app.services.rag.seed_corpus import seed_official_documents_corpus
-        seed_official_documents_corpus(db)
-    except Exception:
-        pass
+        for data in VERIFIED_SCHEMES:
+            data_copy = dict(data)
+            sources_data = data_copy.pop("sources", [])
+            
+            existing_scheme = db.query(Scheme).filter(Scheme.slug == data_copy["slug"]).first()
+            if not existing_scheme:
+                scheme = Scheme(**data_copy)
+                db.add(scheme)
+                db.flush()
+
+                for s in sources_data:
+                    source = SchemeSource(
+                        scheme_id=scheme.id,
+                        source_title=s["source_title"],
+                        source_url=s["source_url"],
+                        issuing_authority=s["issuing_authority"],
+                        document_reference=s.get("document_reference")
+                    )
+                    db.add(source)
+                db.commit()
+
+        # Check for default admin user
+        admin_user = db.query(User).filter(User.email == "admin@jansahayak.gov.in").first()
+        if not admin_user:
+            admin = User(
+                full_name="JanSahayak Nodal Officer",
+                email="admin@jansahayak.gov.in",
+                phone="9876543210",
+                hashed_password=hash_password("JanSahayakAdmin@2026"),
+                role="admin",
+                preferred_language="en",
+                state="Delhi",
+                is_active=True
+            )
+            db.add(admin)
+            db.commit()
+    except Exception as e:
+        db.rollback()
+        raise e

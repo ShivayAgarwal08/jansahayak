@@ -277,33 +277,41 @@ def seed_official_documents_corpus(db: Session) -> Dict[str, Any]:
     skipped_count = 0
 
     for doc_data in OFFICIAL_SCHEME_DOCUMENTS:
-        scheme = db.query(Scheme).filter(Scheme.slug == doc_data["scheme_slug"]).first()
-        if not scheme:
-            logger.warning(f"Scheme with slug '{doc_data['scheme_slug']}' not found in database. Skipping document.")
-            continue
+        try:
+            scheme = db.query(Scheme).filter(Scheme.slug == doc_data["scheme_slug"]).first()
+            if not scheme:
+                logger.warning(f"Scheme with slug '{doc_data['scheme_slug']}' not found in database. Skipping document.")
+                continue
 
-        existing_doc = db.query(KnowledgeDocument).filter(
-            KnowledgeDocument.scheme_id == scheme.id,
-            KnowledgeDocument.source_url == doc_data["source_url"]
-        ).first()
+            existing_doc = db.query(KnowledgeDocument).filter(
+                KnowledgeDocument.scheme_id == scheme.id,
+                KnowledgeDocument.source_url == doc_data["source_url"]
+            ).first()
 
-        if existing_doc and len(existing_doc.chunks) > 0:
-            skipped_count += 1
-            continue
+            if existing_doc and len(existing_doc.chunks) > 0:
+                skipped_count += 1
+                continue
 
-        res = ingest_document(
-            db=db,
-            scheme_slug=doc_data["scheme_slug"],
-            title=doc_data["title"],
-            source_url=doc_data["source_url"],
-            authority=doc_data["authority"],
-            document_reference=doc_data.get("document_reference"),
-            doc_type=doc_data.get("doc_type", "guidelines"),
-            pages=doc_data.get("pages"),
-            ocr_status=doc_data.get("ocr_status", "not_needed")
-        )
-        ingested_count += 1
-        total_chunks += res.get("chunks_count", 0)
+            res = ingest_document(
+                db=db,
+                scheme_slug=doc_data["scheme_slug"],
+                title=doc_data["title"],
+                source_url=doc_data["source_url"],
+                authority=doc_data["authority"],
+                document_reference=doc_data.get("document_reference"),
+                doc_type=doc_data.get("doc_type", "guidelines"),
+                pages=doc_data.get("pages"),
+                ocr_status=doc_data.get("ocr_status", "not_needed")
+            )
+            ingested_count += 1
+            total_chunks += res.get("chunks_count", 0)
+        except Exception as e:
+            db.rollback()
+            logger.error(
+                f"Database error while seeding official document '{doc_data.get('scheme_slug')}': {e}. Transaction rolled back.",
+                exc_info=True
+            )
+            raise e
 
     logger.info(f"Official corpus seeding complete: {ingested_count} ingested, {skipped_count} skipped, {total_chunks} chunks.")
     return {

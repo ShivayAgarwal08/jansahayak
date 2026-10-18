@@ -102,53 +102,68 @@ def ingest_document(
     if not scheme:
         raise ValueError(f"Scheme with slug '{scheme_slug}' not found in database.")
 
-    # Idempotent: check if document already exists by source_url and title
-    doc = db.query(KnowledgeDocument).filter(
-        KnowledgeDocument.scheme_id == scheme.id,
-        KnowledgeDocument.source_url == source_url
-    ).first()
+    try:
+        doc = db.query(KnowledgeDocument).filter(
+            KnowledgeDocument.scheme_id == scheme.id,
+            KnowledgeDocument.source_url == source_url
+        ).first()
 
-    if not doc:
-        doc = KnowledgeDocument(
-            scheme_id=scheme.id,
-            title=title,
-            source_url=source_url,
-            authority=authority,
-            document_reference=document_reference,
-            retrieval_date=datetime.now(timezone.utc),
-            doc_type=doc_type,
-            ocr_status=ocr_status,
-            total_pages=len(pages) if pages else 1
-        )
-        db.add(doc)
-        db.flush()
-    else:
-        # Update metadata & clear old chunks for re-ingestion
-        doc.title = title
-        doc.authority = authority
-        doc.document_reference = document_reference
-        doc.retrieval_date = datetime.now(timezone.utc)
-        doc.doc_type = doc_type
-        doc.ocr_status = ocr_status
-        doc.total_pages = len(pages) if pages else 1
-        db.query(DocumentChunk).filter(DocumentChunk.document_id == doc.id).delete()
-        db.flush()
+        if not doc:
+            doc = KnowledgeDocument(
+                scheme_id=scheme.id,
+                title=title,
+                source_url=source_url,
+                authority=authority,
+                document_reference=document_reference,
+                retrieval_date=datetime.now(timezone.utc),
+                doc_type=doc_type,
+                ocr_status=ocr_status,
+                total_pages=len(pages) if pages else 1
+            )
+            db.add(doc)
+            db.flush()
+        else:
+            # Update metadata & clear old chunks for re-ingestion
+            doc.title = title
+            doc.authority = authority
+            doc.document_reference = document_reference
+            doc.retrieval_date = datetime.now(timezone.utc)
+            doc.doc_type = doc_type
+            doc.ocr_status = ocr_status
+            doc.total_pages = len(pages) if pages else 1
+            db.query(DocumentChunk).filter(DocumentChunk.document_id == doc.id).delete()
+            db.flush()
 
-    # Process pages or raw text into chunks
-    chunks_to_add: List[DocumentChunk] = []
-    chunk_counter = 0
+        # Process pages or raw text into chunks
+        chunks_to_add: List[DocumentChunk] = []
+        chunk_counter = 0
 
-    if pages:
-        for page_num, page_content in pages:
-            if not page_content.strip():
-                continue
-            page_chunks = chunk_document_text(page_content, default_page=page_num)
-            for c in page_chunks:
+        if pages:
+            for page_num, page_content in pages:
+                if not page_content.strip():
+                    continue
+                page_chunks = chunk_document_text(page_content, default_page=page_num)
+                for c in page_chunks:
+                    embedding = generate_embedding(c.content)
+                    chunks_to_add.append(DocumentChunk(
+                        document_id=doc.id,
+                        chunk_index=chunk_counter,
+                        page_number=page_num,
+                        section_title=c.section_title,
+                        content=c.content,
+                        keywords=c.keywords,
+                        embedding=embedding,
+                        token_count=c.token_count
+                    ))
+                    chunk_counter += 1
+        elif raw_text:
+            text_chunks = chunk_document_text(raw_text, default_page=1)
+            for c in text_chunks:
                 embedding = generate_embedding(c.content)
                 chunks_to_add.append(DocumentChunk(
                     document_id=doc.id,
                     chunk_index=chunk_counter,
-                    page_number=page_num,
+                    page_number=c.page_number,
                     section_title=c.section_title,
                     content=c.content,
                     keywords=c.keywords,
@@ -156,27 +171,15 @@ def ingest_document(
                     token_count=c.token_count
                 ))
                 chunk_counter += 1
-    elif raw_text:
-        text_chunks = chunk_document_text(raw_text, default_page=1)
-        for c in text_chunks:
-            embedding = generate_embedding(c.content)
-            chunks_to_add.append(DocumentChunk(
-                document_id=doc.id,
-                chunk_index=chunk_counter,
-                page_number=c.page_number,
-                section_title=c.section_title,
-                content=c.content,
-                keywords=c.keywords,
-                embedding=embedding,
-                token_count=c.token_count
-            ))
-            chunk_counter += 1
 
-    for chunk in chunks_to_add:
-        db.add(chunk)
+        for chunk in chunks_to_add:
+            db.add(chunk)
 
-    db.commit()
-    db.refresh(doc)
+        db.commit()
+        db.refresh(doc)
+    except Exception as e:
+        db.rollback()
+        raise e
 
     return {
         "document_id": doc.id,
