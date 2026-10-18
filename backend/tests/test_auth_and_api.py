@@ -166,3 +166,34 @@ def test_pdf_generators():
         desired_resolution="Expedited approval and card issuance"
     )
     assert grievance_pdf.startswith(b"%PDF")
+
+def test_email_validation_enforced():
+    # Attempt registration with invalid email format
+    invalid_payload = {
+        "full_name": "Test User",
+        "email": "not-an-email-address",
+        "password": "ValidPassword123!"
+    }
+    res = client.post("/api/auth/register", json=invalid_payload)
+    assert res.status_code == 422  # Pydantic validation error
+
+def test_assistant_chat_fallback():
+    # Test chat assistant with no external keys configured
+    res = client.post("/api/assistant/chat", json={
+        "query": "How to get PM Kisan ₹6000 installment?",
+        "scheme_slug": "pm-kisan"
+    })
+    assert res.status_code == 200
+    data = res.json()
+    assert "answer" in data
+    assert "citations" in data
+    assert len(data["citations"]) > 0
+
+def test_voice_status():
+    res = client.get("/api/voice/status")
+    assert res.status_code == 200
+    data = res.json()
+    assert "provider" in data
+    assert "browser_speech_fallback_supported" in data
+    assert data["browser_speech_fallback_supported"] is True
+
