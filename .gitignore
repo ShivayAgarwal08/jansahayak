@@ -1,0 +1,103 @@
+# ==============================================================================
+# JanSahayak - Git Ignore Configuration
+# Comprehensive ignore rules for Node.js, Python, Secrets, Storage & OS
+# ==============================================================================
+
+# --- Secrets, Credentials & Environment Files ---
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.cert
+*.crt
+*.pfx
+*service_account*.json
+*credentials*.json
+secrets/
+
+# --- Python & Virtual Environments ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+.hypothesis/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual Environments
+venv/
+.venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# --- Node.js & Frontend Build Artifacts ---
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+.pnpm-store/
+frontend/dist/
+frontend/dist-ssr/
+frontend/build/
+*.tsbuildinfo
+.eslintcache
+
+# --- User Uploads, Documents & Temporary Files ---
+backend/uploads/
+backend/storage/
+uploads/
+storage/
+temp/
+tmp/
+*.sqlite3
+*.db
+*.sql
+*.dump
+*.log
+
+# Generated citizen PDFs / reports (keep templates, ignore generated user outputs)
+backend/generated_docs/
+generated_docs/
+
+# --- IDEs & System Files ---
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+.idea/
+*.sublime-project
+*.sublime-workspace
+.DS_Store
+Thumbs.db
+Desktop.ini
+*.swp
+*.swo
+*~
+
+# --- OS / Miscellaneous ---
+*.orig
