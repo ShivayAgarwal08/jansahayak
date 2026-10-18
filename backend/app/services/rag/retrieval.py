@@ -25,7 +25,8 @@ STOPWORDS = {
     "third", "double", "triple",
     # Generic conversational filler words (intent words like eligible/benefit/apply/exclusion are preserved!)
     "government", "govt", "scheme", "schemes", "help", "please", "know", "information", "details",
-    "might", "annual", "yearly", "monthly", "per", "get", "buy", "give", "want", "need", "like", "take", "also", "new"
+    "might", "annual", "yearly", "monthly", "per", "get", "buy", "give", "want", "need", "like", "take", "also", "new",
+    "pm", "free", "pradhan", "mantri", "yojana"
 }
 
 # Sub-Intent definitions for high-precision ranking

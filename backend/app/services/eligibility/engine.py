@@ -370,7 +370,7 @@ def evaluate_scheme_eligibility(scheme: Any, profile: Dict[str, Any]) -> Eligibi
 
     # --- PM SVANidhi ---
     elif slug == "pm-svanidhi":
-        occ = profile.get("occupation", "").lower()
+        occ = (profile.get("occupation") or "").lower()
         is_vendor = ("vendor" in occ) or ("street" in occ) or ("hawker" in occ) or profile.get("is_street_vendor")
         if is_vendor:
             satisfied.append({
@@ -393,7 +393,8 @@ def evaluate_scheme_eligibility(scheme: Any, profile: Dict[str, Any]) -> Eligibi
 
     # --- PM Vishwakarma ---
     elif slug == "pm-vishwakarma":
-        is_artisan = profile.get("is_traditional_artisan") or profile.get("occupation", "").lower() in [
+        occ_val = (profile.get("occupation") or "").lower()
+        is_artisan = profile.get("is_traditional_artisan") or occ_val in [
             "carpenter", "blacksmith", "goldsmith", "potter", "cobbler", "mason", "tailor", "barber", "artisan"
         ]
         if is_artisan:
