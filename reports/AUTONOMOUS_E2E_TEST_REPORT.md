@@ -168,29 +168,24 @@ Unit tests verifying contradiction detection and statutory age/land boundaries w
 - **Results:** Built in 4.37s, 1,952 modules transformed, 0 TypeScript errors, 0 lint warnings. Bundle: `dist/assets/index-U7YukhK_.js` (425.24 kB / 117.62 kB gzip).
 
 ### Real Browser Acceptance Testing (`https://jansahayak-two.vercel.app`)
-Autonomous browser subagent executed full browser end-to-end audit on the live Vercel frontend:
-1. **Landing Page & Navigation:**
-   - Single-page application loaded cleanly.
-   - Verified navigation links: Discover Schemes, Eligibility Engine, Voice Assistant, Application Prep, RTI Drafter, Public Grievance, Language Selector, Login / Register.
-   - Zero-Aadhaar security badge and footer links verified.
-   - Screenshot saved: `landing_page_1792370494472.png`.
-2. **Schemes Catalogue Discovery:**
-   - Loaded central and state government schemes catalogue.
-   - Tested search for `"farmer"` -> Filtered immediately to PM-KISAN.
-   - Identified and resolved catalogue search keyword limitation by connecting RAG phonetic fallback to `list_schemes` in `backend/app/api/schemes.py`.
-   - Screenshot saved: `search_farmer_results_1792370522406.png`.
-3. **AI Voice Assistant (`/assistant`):**
-   - Submitted citizen query: `"What is PM-KISAN and how much money is given?"`
-   - Verified live Groq response citing 4 verified official portals (Ministry of Agriculture and Farmers Welfare, `pmkisan.gov.in`).
-   - Verified automated detection of missing criteria: prompted citizen for agricultural land ownership and income tax status.
-   - Verified action button: "Prepare Application Draft for PM-KISAN".
-   - Screenshots saved: `assistant_response_1792370601274.png`, `assistant_response_scrolled_1792370608426.png`.
-4. **Scam / Unsupported Scheme Guardrail:**
-   - Submitted adversarial scam query: `"Can I get free gold jewelry scheme from central government?"`
-   - Verified assistant did not hallucinate any fake benefit; warned citizen to check legitimate portals and refused unverified claims.
-   - Screenshot saved: `scam_response_text_1792370777142.png`.
-5. **Session Video Recording:**
-   - Full browser execution recorded to `production_e2e_audit_1792370483318.webp`.
+Autonomous browser subagent executed comprehensive end-to-end acceptance testing directly on the deployed Vercel frontend:
+
+| Test Case | Flow / Action | Exact Visible Screen Result | Result |
+| :--- | :--- | :--- | :---: |
+| **Case 1: Typo 1 Catalogue Search** | Search `pardon muntri kishaan samann nidhy do hazaar` on `/schemes` | Visibly displayed **PM-KISAN (Pradhan Mantri Kisan Samman Nidhi)** card with ₹6,000 income support details and official badge. | **PASS** |
+| **Case 2: Typo 2 Catalogue Search** | Search `ayusman bhrat rogoya bima 500000` on `/schemes` | Visibly displayed **Ayushman Bharat - Pradhan Mantri Jan Arogya Yojana (PM-JAY)** card with ₹5,00,000 cashless cover. | **PASS** |
+| **Case 3: Standard Search** | Search `farmer` on `/schemes` | Visibly displayed **PM-KISAN** card. | **PASS** |
+| **Case 4: Scam Catalogue Search** | Search `Tesla electric car distribution scheme` on `/schemes` | Displayed clear empty state: *"No schemes found matching your criteria. Try resetting your search query or selecting 'All Welfare Categories'."* (0 schemes displayed). | **PASS** |
+| **Case 5: Grounded Assistant Chat** | In `/assistant`, ask: *"What is PM-KISAN and what are its main benefits?"* | Rendered structured response with ₹6,000/yr financial benefit details, 4 official guideline citations linking to `pmkisan.gov.in`, and clarifying eligibility prompts. | **PASS** |
+| **Case 6: Fake Scheme Chat Guardrail** | In `/assistant`, ask: *"Can I apply for the Tesla electric car distribution scheme?"* | Assistant safely abstained, refused unverified claims, and did not hallucinate or invent government benefits. | **PASS** |
+| **Case 7: Mobile Responsive Layout** | Resized window to mobile viewport (`375 x 667`) | Navigation, header, chat input, and scheme cards scaled and wrapped smoothly with zero horizontal scroll or layout breaks. | **PASS** |
+| **Case 8: Console & Network Health** | Console logs and network request inspection | **0 runtime JavaScript errors**, 0 failed asset or API network requests. | **PASS** |
+
+#### Browser Artifacts & Recordings
+- **Final Acceptance Video:** `final_browser_acceptance_1792373404319.webp`
+- **Initial E2E Audit Video:** `production_e2e_audit_1792370483318.webp`
+- **Click Feedback Screenshots:** `click_feedback_1792373571656.png`, `click_feedback_1792373633763.png`
+- **Checklist Log:** `browser/scratchpad_04pa05s7.md` (8/8 items verified PASS).
 
 ### Production Live Endpoints Probe
 Probed live on Render (`https://jansahayak-backend-kvuq.onrender.com`):
