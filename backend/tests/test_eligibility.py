@@ -76,3 +76,68 @@ def test_ignoaps_age_boundary():
     profile_60 = {"age": 60, "is_bpl": True}
     res_60 = evaluate_scheme_eligibility(scheme, profile_60)
     assert res_60.status == "eligible"
+
+def test_contradictory_user_facts_prevent_silent_eligibility():
+    """Verify that contradictory user facts cannot silently pass as eligible."""
+    pm_kisan = MockScheme(
+        slug="pm-kisan",
+        name="PM-KISAN",
+        rules={"min_age": 18, "landholding_required": True, "income_tax_payer": False, "is_govt_employee": False}
+    )
+    # Contradiction: says does not own cultivable land, but claims to be landholding farmer
+    contradictory_profile = {
+        "owns_cultivable_land": False,
+        "is_landholding_farmer": True,
+        "is_govt_employee": False,
+        "pays_income_tax": False
+    }
+    res = evaluate_scheme_eligibility(pm_kisan, contradictory_profile)
+    assert res.status in ["ineligible", "possibly_eligible"]
+    assert res.status != "eligible"
+    assert any("Consistency" in u.get("criterion", "") for u in res.unknown_conditions)
+
+    # Housing contradiction: owns pucca house but claims houseless
+    pmay_g = MockScheme(
+        slug="pmay-g",
+        name="PMAY-G",
+        rules={"housing_status": ["houseless", "kutcha_house"], "owns_pucca_house": False}
+    )
+    contradictory_housing = {
+        "owns_pucca_house": True,
+        "housing_status": "houseless",
+        "is_govt_employee": False
+    }
+    res_housing = evaluate_scheme_eligibility(pmay_g, contradictory_housing)
+    assert res_housing.status in ["ineligible", "possibly_eligible"]
+    assert res_housing.status != "eligible"
+
+def test_statutory_boundaries_and_cutoffs():
+    """Verify exact statutory cutoffs across schemes."""
+    # 1. PMMVY: age 18 (ineligible) vs 19 (eligible)
+    pmmvy = MockScheme(
+        slug="pmmvy",
+        name="PMMVY",
+        rules={"min_age": 19, "gender": "female", "is_pregnant_or_lactating": True, "is_regular_govt_employee": False}
+    )
+    res_18 = evaluate_scheme_eligibility(pmmvy, {"age": 18, "gender": "female", "is_pregnant_or_lactating": True, "is_regular_govt_employee": False})
+    res_19 = evaluate_scheme_eligibility(pmmvy, {"age": 19, "gender": "female", "is_pregnant_or_lactating": True, "is_regular_govt_employee": False})
+    assert res_18.status == "ineligible"
+    assert res_19.status == "eligible"
+
+    # 2. SSY: age 10 (eligible) vs 11 (ineligible)
+    ssy = MockScheme(
+        slug="sukanya-samriddhi-yojana",
+        name="SSY",
+        rules={"gender": "female", "max_age_years": 10}
+    )
+    res_10 = evaluate_scheme_eligibility(ssy, {"girl_child_age": 10, "gender": "female"})
+    res_11 = evaluate_scheme_eligibility(ssy, {"girl_child_age": 11, "gender": "female"})
+    assert res_10.status == "eligible"
+    assert res_11.status == "ineligible"
+
+def test_disclaimer_and_no_official_decision_guarantee():
+    """Verify that every assessment includes the mandatory non-official advisory disclaimer."""
+    scheme = MockScheme(slug="test", name="Test Scheme", rules={})
+    res = evaluate_scheme_eligibility(scheme, {})
+    assert "does not constitute official sanction" in res.disclaimer
+    assert "rule-based informational guidance" in res.disclaimer

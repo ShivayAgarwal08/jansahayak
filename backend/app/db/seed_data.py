@@ -238,9 +238,9 @@ VERIFIED_SCHEMES = [
         "sources": [
             {
                 "source_title": "National Social Assistance Programme (NSAP) Guidelines",
-                "source_url": "https://nsap.nic.in/guidelines.html",
+                "source_url": "https://nsap.nic.in/guidelines/NSAP_guidelines_Oct2014.pdf",
                 "issuing_authority": "Ministry of Rural Development, Govt of India",
-                "document_reference": "NSAP-MoRD Guidelines 2014 & Gaz. Notif."
+                "document_reference": "NSAP-MoRD Guidelines 2014 Section 2.1"
             }
         ]
     },
@@ -284,9 +284,9 @@ VERIFIED_SCHEMES = [
         "sources": [
             {
                 "source_title": "Sukanya Samriddhi Account Rules, 2019",
-                "source_url": "https://www.indiapost.gov.in/Financial/Pages/Content/Sukanya-Samriddhi-Account.aspx",
+                "source_url": "https://www.indiapost.gov.in/VAS/DOP_PDFFiles/SavingsBank/Sukanya-Samriddhi-Account-Scheme-2019.pdf",
                 "issuing_authority": "Ministry of Finance, Department of Economic Affairs",
-                "document_reference": "G.S.R. 914(E) Gazette Notification"
+                "document_reference": "G.S.R. 914(E) Gazette Notification, 12-12-2019"
             }
         ]
     },
@@ -329,9 +329,9 @@ VERIFIED_SCHEMES = [
         "sources": [
             {
                 "source_title": "PM SVANidhi Operational Guidelines",
-                "source_url": "https://pmsvanidhi.mohua.gov.in/Schemes/SchemeGuideline",
+                "source_url": "https://mohua.gov.in/upload/uploadfiles/files/PMSVANidhi%20Scheme%20Guidelines(1).pdf",
                 "issuing_authority": "Ministry of Housing and Urban Affairs, Govt of India",
-                "document_reference": "MoHUA OM K-12019(11)/1/2020-UPA-II"
+                "document_reference": "MoHUA OM K-12019(11)/1/2020-UPA-II, 01-06-2020"
             }
         ]
     },
@@ -379,9 +379,9 @@ VERIFIED_SCHEMES = [
         "sources": [
             {
                 "source_title": "PM Vishwakarma Scheme Guidelines",
-                "source_url": "https://pmvishwakarma.gov.in/Home/Guidelines",
+                "source_url": "https://msme.gov.in/sites/default/files/PM-Vishwakarma-Guidelines.pdf",
                 "issuing_authority": "Ministry of Micro, Small & Medium Enterprises, Govt of India",
-                "document_reference": "MSME Notification No. 1/1(1)/2023-P&G"
+                "document_reference": "MSME Notification No. 1/1(1)/2023-P&G, 17-09-2023"
             }
         ]
     }

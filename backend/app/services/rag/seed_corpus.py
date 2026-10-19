@@ -104,10 +104,10 @@ A rural household having any of the following 13 assets or conditions is automat
     {
         "scheme_slug": "ayushman-bharat-pmjay",
         "title": "Ayushman Bharat - Pradhan Mantri Jan Arogya Yojana Guidelines",
-        "source_url": "https://pmjay.gov.in",
+        "source_url": "https://pmjay.gov.in/sites/default/files/2018-09/Guidelines_on_Process_of_Beneficiary_Identification.pdf",
         "authority": "National Health Authority, Ministry of Health and Family Welfare",
-        "document_reference": "NHA OM No. S.12019/02/2018-NHA",
-        "doc_type": "guidelines",
+        "document_reference": "NHA OM No. S.12019/02/2018-NHA (Senior Citizen Expansion: Sep 2024)",
+        "doc_type": "pdf",
         "ocr_status": "not_needed",
         "pages": [
             (
@@ -139,10 +139,10 @@ Under the landmark cabinet expansion in 2024, ALL senior citizens aged 70 years 
     {
         "scheme_slug": "pmmvy",
         "title": "Pradhan Mantri Matru Vandana Yojana (PMMVY) Operational Guidelines",
-        "source_url": "https://pmmvy.wcd.gov.in",
+        "source_url": "https://wcd.nic.in/sites/default/files/PMMVY%20Scheme%20Guidelines.pdf",
         "authority": "Ministry of Women and Child Development, Govt of India",
-        "document_reference": "MWCD Order No. 11-12/2021-PMMVY",
-        "doc_type": "guidelines",
+        "document_reference": "MWCD Notification No. 15-2/2021-PMMVY (Mission Shakti)",
+        "doc_type": "pdf",
         "ocr_status": "not_needed",
         "pages": [
             (
@@ -171,10 +171,10 @@ Exclusions:
     {
         "scheme_slug": "ignoaps",
         "title": "National Social Assistance Programme (NSAP) Guidelines - IGNOAPS",
-        "source_url": "https://nsap.nic.in",
+        "source_url": "https://nsap.nic.in/guidelines/NSAP_guidelines_Oct2014.pdf",
         "authority": "Ministry of Rural Development, Govt of India",
-        "document_reference": "MoRD NSAP Guidelines Section 2.1",
-        "doc_type": "guidelines",
+        "document_reference": "MoRD NSAP Guidelines 2014 Section 2.1",
+        "doc_type": "pdf",
         "ocr_status": "not_needed",
         "pages": [
             (
@@ -195,10 +195,10 @@ Pension Amounts:
     {
         "scheme_slug": "sukanya-samriddhi-yojana",
         "title": "Sukanya Samriddhi Account Rules, 2019",
-        "source_url": "https://www.indiapost.gov.in",
+        "source_url": "https://www.indiapost.gov.in/VAS/DOP_PDFFiles/SavingsBank/Sukanya-Samriddhi-Account-Scheme-2019.pdf",
         "authority": "Department of Economic Affairs, Ministry of Finance",
-        "document_reference": "GSR 914(E), Gazette of India",
-        "doc_type": "guidelines",
+        "document_reference": "GSR 914(E), Gazette of India (Extraordinary), 12-12-2019",
+        "doc_type": "gazette",
         "ocr_status": "not_needed",
         "pages": [
             (
@@ -216,10 +216,10 @@ Key Rules:
     {
         "scheme_slug": "pm-svanidhi",
         "title": "PM Street Vendor's AtmaNirbhar Nidhi Scheme Guidelines",
-        "source_url": "https://pmsvanidhi.mohua.gov.in",
+        "source_url": "https://pmsvanidhi.mohua.gov.in/Schemes/SchemeGuideline",
         "authority": "Ministry of Housing and Urban Affairs, Govt of India",
-        "document_reference": "MoHUA Guidelines No. K-12015/01/2020-UPA-II",
-        "doc_type": "guidelines",
+        "document_reference": "MoHUA Guidelines No. K-12015/01/2020-UPA-II, 01-06-2020",
+        "doc_type": "pdf",
         "ocr_status": "not_needed",
         "pages": [
             (
@@ -241,10 +241,10 @@ Incentives:
     {
         "scheme_slug": "pm-vishwakarma",
         "title": "PM Vishwakarma Central Sector Scheme Guidelines",
-        "source_url": "https://pmvishwakarma.gov.in",
+        "source_url": "https://msme.gov.in/sites/default/files/PM-Vishwakarma-Guidelines.pdf",
         "authority": "Ministry of Micro, Small & Medium Enterprises, Govt of India",
-        "document_reference": "MSME Notification No. 1/1(1)/2023-P&G",
-        "doc_type": "guidelines",
+        "document_reference": "MSME Notification No. 1/1(1)/2023-P&G, 17-09-2023",
+        "doc_type": "pdf",
         "ocr_status": "not_needed",
         "pages": [
             (

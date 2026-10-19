@@ -1,10 +1,38 @@
 import re
+import difflib
 from typing import List, Dict, Any, Optional, Tuple
 from sqlalchemy.orm import Session
 from app.models.scheme import Scheme
 
 from app.models.document import KnowledgeDocument, DocumentChunk
 from app.services.rag.embeddings import generate_embedding, compute_cosine_similarity
+
+def normalize_indic_phonetics(word: str) -> str:
+    """
+    Normalize common Indic phonetic, transliteration, and typo variations.
+    Collapses vowel elongations (aa -> a, ee -> i, oo -> u), consonant gemination,
+    aspirates/sibilants, and trailing 'y' -> 'i'.
+    """
+    w = word.lower().strip()
+    if not w:
+        return ""
+    w = re.sub(r"aa+", "a", w)
+    w = re.sub(r"ee+", "i", w)
+    w = re.sub(r"oo+", "u", w)
+    w = re.sub(r"ii+", "i", w)
+    w = re.sub(r"uu+", "u", w)
+    w = re.sub(r"sh", "s", w)
+    w = re.sub(r"kh", "k", w)
+    w = re.sub(r"bh", "b", w)
+    w = re.sub(r"dh", "d", w)
+    w = re.sub(r"th", "t", w)
+    w = re.sub(r"ph", "f", w)
+    w = re.sub(r"gh", "g", w)
+    w = re.sub(r"ch+", "c", w)
+    w = re.sub(r"([bdfgklmnprstvwz])\1+", r"\1", w)
+    if w.endswith("y") and len(w) > 3:
+        w = w[:-1] + "i"
+    return w
 
 # Comprehensive stopwords to prevent generic numbers and conversational filler from polluting search
 STOPWORDS = {
@@ -60,7 +88,7 @@ QUERY_INTENTS = {
 # Scam, giveaway, and out-of-scope indicators to ensure reliable abstention (zero false positives)
 SCAM_OR_UNRELATED_INDICATORS = {
     "lottery", "giveaway", "cash giveaway", "free smartphone", "gold iphone", "free iphone",
-    "free gold", "cryptocurrency", "crypto", "bitcoin", "helicopter",
+    "free gold", "cryptocurrency", "crypto", "bitcoin", "helicopter", "jackpot", "cash jackpot",
     "cricket match", "cricket score", "bake a cake", "chocolate cake", "flight ticket",
     "nullpointerexception", "python programming", "switzerland"
 }
@@ -68,7 +96,7 @@ SCAM_OR_UNRELATED_INDICATORS = {
 # Domain Intent Mappings with high-precision keywords
 DOMAIN_INTENTS = {
     "pm-kisan": {
-        "keywords": {"farmer", "farmers", "farming", "kisan", "krishi", "land", "landholding", "cultivable", "cultivator", "bigha", "bighas", "acre", "acres", "agriculture", "agricultural", "pm-kisan", "pmkisan", "khet", "kheti", "fasal", "krishak", "6000 rupaye", "kisaan", "samman nidhy"},
+        "keywords": {"farmer", "farmers", "farming", "kisan", "krishi", "land", "landholding", "cultivable", "cultivator", "bigha", "bighas", "acre", "acres", "agriculture", "agricultural", "pm-kisan", "pmkisan", "khet", "kheti", "fasal", "krishak", "6000 rupaye", "kisaan", "samman", "nidhi", "samman nidhy"},
         "boost": 25,
         "reason": "Matched agricultural & farmer landholding criteria"
     },
@@ -78,7 +106,7 @@ DOMAIN_INTENTS = {
         "reason": "Matched rural housing & dwelling condition criteria"
     },
     "ayushman-bharat-pmjay": {
-        "keywords": {"health", "hospital", "hospitalization", "medical", "treatment", "doctor", "illness", "surgery", "ayushman", "golden card", "5 lakh", "pmjay", "pm-jay", "healthcare", "ilaj", "dawa", "bimar", "bimari", "70 saal", "70 years", "aayushman", "pmjaay"},
+        "keywords": {"health", "hospital", "hospitalization", "medical", "treatment", "doctor", "illness", "surgery", "ayushman", "golden card", "5 lakh", "pmjay", "pm-jay", "healthcare", "ilaj", "dawa", "bimar", "bimari", "70 saal", "70 years", "aayushman", "pmjaay", "bharat", "arogya", "bima", "beema", "clinic"},
         "boost": 25,
         "reason": "Matched health & secondary/tertiary hospital coverage criteria"
     },
@@ -93,7 +121,7 @@ DOMAIN_INTENTS = {
         "reason": "Matched senior citizen social security pension criteria"
     },
     "sukanya-samriddhi-yojana": {
-        "keywords": {"girl child", "daughter", "sukanya", "samriddhi", "girl", "beti", "under 10", "child education", "ssy", "kanya", "chhoti", "samridhi"},
+        "keywords": {"girl child", "daughter", "sukanya", "samriddhi", "girl", "beti", "under 10", "child education", "ssy", "kanya", "chhoti", "samridhi", "dakghar", "gudiya"},
         "boost": 25,
         "reason": "Matched girl child savings & education welfare criteria"
     },
@@ -103,7 +131,7 @@ DOMAIN_INTENTS = {
         "reason": "Matched urban street vendor micro-credit criteria"
     },
     "pm-vishwakarma": {
-        "keywords": {"artisan", "vishwakarma", "carpenter", "blacksmith", "goldsmith", "potter", "mason", "tailor", "barber", "craftsperson", "traditional craft", "tool kit", "toolkit", "pm-vishwakarma", "pottery", "clay", "pots", "earthenware", "kumhaar", "lohar", "sonar", "cobbler", "sculptor", "traditional trade", "hand tools"},
+        "keywords": {"artisan", "vishwakarma", "carpenter", "blacksmith", "goldsmith", "potter", "mason", "tailor", "barber", "craftsperson", "traditional craft", "tool kit", "toolkit", "pm-vishwakarma", "pottery", "clay", "pots", "earthenware", "kumhaar", "lohar", "sonar", "cobbler", "sculptor", "traditional trade", "hand tools", "karigar", "auzar", "bartan"},
         "boost": 25,
         "reason": "Matched traditional family artisan & craftsperson trade criteria"
     }
@@ -247,11 +275,44 @@ def retrieve_grounded_passages(
     meaningful_tokens = [w for w in raw_tokens if len(w) > 2 and w not in STOPWORDS]
 
     # Detect domain intents in user query
+    # 1. Exact canonical matches
     matched_domains: Dict[str, List[str]] = {}
     for slug, intent_data in DOMAIN_INTENTS.items():
         matched_kws = [kw for kw in intent_data["keywords"] if re.search(rf"\b{re.escape(kw)}\b", query_str_lower)]
         if matched_kws:
             matched_domains[slug] = matched_kws
+
+    # 2. Bounded phonetic and fuzzy fallback for plausible spelling and transliteration variations
+    matched_fuzzy: Dict[str, List[Tuple[str, str, float, str]]] = {}
+    for t in meaningful_tokens:
+        if len(t) < 4:
+            continue
+        norm_t = normalize_indic_phonetics(t)
+        for slug, intent_data in DOMAIN_INTENTS.items():
+            for kw in intent_data["keywords"]:
+                if " " in kw or len(kw) < 4:
+                    continue
+                norm_kw = normalize_indic_phonetics(kw)
+                
+                # Rule A: Exact match after Indic phonetic normalization
+                if norm_t == norm_kw:
+                    matched_fuzzy.setdefault(slug, []).append((t, kw, 1.0, "exact_norm"))
+                    break
+                # Rule B: High-confidence fuzzy match on substantive tokens (len >= 5, ratio >= 0.85)
+                elif len(norm_t) >= 5 and len(norm_kw) >= 5:
+                    ratio = difflib.SequenceMatcher(None, norm_t, norm_kw).ratio()
+                    if ratio >= 0.85:
+                        matched_fuzzy.setdefault(slug, []).append((t, kw, ratio, "fuzzy"))
+                        break
+
+    # 3. Gated acceptance: require strong exact_norm (len >= 5) or >= 2 corroborating tokens
+    for slug, hits in matched_fuzzy.items():
+        if slug in matched_domains:
+            continue
+        unique_tokens = set(h[0] for h in hits)
+        has_strong_exact_norm = any(h[3] == "exact_norm" and len(h[0]) >= 5 for h in hits)
+        if has_strong_exact_norm or len(unique_tokens) >= 2:
+            matched_domains[slug] = [f"{h[0]}~{h[1]}" for h in hits]
 
     has_other_domain = any(slug != "pm-kisan" for slug in matched_domains.keys())
     is_agri_query = ("pm-kisan" in matched_domains or any(w in query_str_lower for w in ["farmer", "kisan", "cultivator", "bigha", "land"])) and not has_other_domain
@@ -306,8 +367,22 @@ def retrieve_grounded_passages(
             section_words = set(re.findall(r"\w+", section_lower))
             chunk_kw_set = set(chunk.keywords or [])
 
-            # Substantive token hits (civic entities/nouns, excluding generic intent modifiers)
+            # Substantive token hits (civic entities/nouns, with phonetic normalization fallback)
             substantive_hits = sum(1 for t in substantive_tokens if (t in content_words or t in chunk_kw_set or t in section_words))
+            if substantive_hits == 0 and scheme.slug in matched_domains:
+                for t in substantive_tokens:
+                    if len(t) >= 4:
+                        norm_t = normalize_indic_phonetics(t)
+                        for cw in (chunk_kw_set | section_words):
+                            if len(cw) >= 4:
+                                norm_cw = normalize_indic_phonetics(cw)
+                                if norm_t == norm_cw:
+                                    substantive_hits += 1
+                                    break
+                                elif len(norm_t) >= 5 and difflib.SequenceMatcher(None, norm_t, norm_cw).ratio() >= 0.85:
+                                    substantive_hits += 1
+                                    break
+
             has_scheme_affinity = (scheme.slug in matched_domains) or (substantive_hits >= 1 and (vec_sim >= 0.45 or substantive_hits >= 2))
 
             # Domain intent boost
@@ -329,15 +404,22 @@ def retrieve_grounded_passages(
                             score += intent_data["boost"] * 0.6
                             reasons.append(f"{intent_data['reason']} in official guideline text")
 
-            # Keyword and section matching with whole-word token sets
+            # Keyword and section matching with whole-word token sets and phonetic fallback
             token_hits = 0
             for t in meaningful_tokens:
                 if t in content_words or t in chunk_kw_set:
                     score += 4.0
                     token_hits += 1
-                if t in section_words:
+                elif t in section_words:
                     score += 6.0
                     token_hits += 1
+                elif len(t) >= 4 and scheme.slug in matched_domains:
+                    norm_t = normalize_indic_phonetics(t)
+                    for kw in chunk_kw_set:
+                        if len(kw) >= 4 and normalize_indic_phonetics(kw) == norm_t:
+                            score += 3.5
+                            token_hits += 1
+                            break
 
             if token_hits > 0:
                 reasons.append(f"Matched {token_hits} civic query keywords in official guideline text")

@@ -65,6 +65,29 @@ def evaluate_scheme_eligibility(scheme: Any, profile: Dict[str, Any]) -> Eligibi
     unsatisfied = []
     unknown = []
 
+    # 0. Contradictory & Conflicting Fact Detection
+    # Detect mutually exclusive or conflicting citizen statements to prevent silent false approvals
+    conflicts = []
+    if profile.get("owns_cultivable_land") is False and (profile.get("is_landholding_farmer") is True or (profile.get("land_acres") or 0) > 0):
+        conflicts.append("Citizen stated they do not own cultivable land, but also claimed landholding farmer status / positive land acreage.")
+    if profile.get("is_landless") is True and profile.get("owns_cultivable_land") is True:
+        conflicts.append("Citizen claimed to be landless while simultaneously reporting agricultural land ownership.")
+    if profile.get("owns_pucca_house") is True and (profile.get("housing_status") in ["houseless", "homeless"] or profile.get("is_houseless") is True):
+        conflicts.append("Citizen reported owning a pucca house while simultaneously stating they are houseless.")
+    age_val = profile.get("age")
+    if age_val is not None and isinstance(age_val, (int, float)) and age_val < 18 and profile.get("is_adult") is True:
+        conflicts.append(f"Citizen reported age as {age_val} while simultaneously indicating adult status.")
+    if profile.get("is_bpl") is False and profile.get("has_bpl_card") is True:
+        conflicts.append("Citizen indicated non-BPL status while simultaneously claiming possession of a BPL card.")
+
+    if conflicts:
+        for c in conflicts:
+            unknown.append({
+                "criterion": "Profile Data Consistency",
+                "prompt": f"Resolve contradictory information: {c}",
+                "reason": "Eligibility cannot be confirmed with mutually inconsistent profile statements."
+            })
+
     # 1. State / Scope Evaluation
     if scheme.scope == "state" and "ALL" not in (scheme.applicable_states or []):
         citizen_state = profile.get("state")
