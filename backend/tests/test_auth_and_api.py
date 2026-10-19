@@ -65,6 +65,30 @@ def test_schemes_list_and_detail():
     assert "sources" in data
     assert len(data["sources"]) > 0
 
+def test_schemes_phonetic_search_fallback():
+    # 1. Phonetic typo regression 1 -> PM-KISAN
+    res_kisan = client.get("/api/schemes?q=pardon+muntri+kishaan+samann+nidhy+do+hazaar")
+    assert res_kisan.status_code == 200
+    kisan_data = res_kisan.json()
+    assert len(kisan_data) >= 1
+    assert kisan_data[0]["slug"] == "pm-kisan"
+
+    # 2. Phonetic typo regression 2 -> Ayushman Bharat
+    res_ayushman = client.get("/api/schemes?q=ayusman+bhrat+rogoya+bima+500000")
+    assert res_ayushman.status_code == 200
+    ayushman_data = res_ayushman.json()
+    assert len(ayushman_data) >= 1
+    assert ayushman_data[0]["slug"] == "ayushman-bharat-pmjay"
+
+    # 3. Unrelated / fake queries must return empty list (safe abstention)
+    res_fake1 = client.get("/api/schemes?q=Tesla+electric+car+distribution+scheme")
+    assert res_fake1.status_code == 200
+    assert len(res_fake1.json()) == 0
+
+    res_fake2 = client.get("/api/schemes?q=Central+Government+50+Lakh+Free+Cash+Jackpot+Scheme")
+    assert res_fake2.status_code == 200
+    assert len(res_fake2.json()) == 0
+
 def test_user_registration_and_login():
     reg_payload = {
         "full_name": "Ramesh Kumar",

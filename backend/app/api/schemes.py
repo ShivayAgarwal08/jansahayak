@@ -39,6 +39,31 @@ def list_schemes(
 
     schemes = query.all()
 
+    # Fallback to RAG phonetic matching if standard substring search yields no results
+    if not schemes and q and q.strip():
+        try:
+            from app.services.rag.retrieval import retrieve_grounded_passages
+            passages = retrieve_grounded_passages(q.strip(), db, limit=3)
+            matched_slugs = []
+            for p in passages:
+                if p.scheme_slug and p.scheme_slug not in matched_slugs:
+                    matched_slugs.append(p.scheme_slug)
+            if matched_slugs:
+                fallback_query = db.query(Scheme).filter(
+                    Scheme.verification_status != "deprecated",
+                    Scheme.slug.in_(matched_slugs)
+                )
+                if category and category != "all":
+                    fallback_query = fallback_query.filter(Scheme.category == category)
+                if scope and scope != "all":
+                    fallback_query = fallback_query.filter(Scheme.scope == scope)
+                fallback_schemes = fallback_query.all()
+                # Maintain rank ordering from retrieval
+                slug_order = {slug: idx for idx, slug in enumerate(matched_slugs)}
+                schemes = sorted(fallback_schemes, key=lambda s: slug_order.get(s.slug, 999))
+        except Exception:
+            pass
+
     # In-memory filter for JSON fields if state or beneficiary specified
     if state and state != "ALL":
         schemes = [
