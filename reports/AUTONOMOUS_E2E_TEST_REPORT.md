@@ -1,11 +1,11 @@
 # JanSahayak (जनसहायक) — Autonomous E2E Test & Verification Report
 
-**Audit Timestamp:** 2026-10-19T00:30:00Z  
+**Audit Timestamp:** 2026-10-19T00:35:00Z  
 **Release Decision:** **`CONDITIONAL PASS`**  
-- **Justification:** Core civic features, RAG retrieval across 8 schemes with Indic phonetic normalization and bounded fuzzy fallback, deterministic statutory eligibility engine with contradiction detection, Neon PostgreSQL persistence, security controls (SQL injection resistance, XSS neutralization, JWT HMAC validation, multi-tenant draft & PDF isolation), and live Groq AI answers (`llama-3.3-70b-versatile`) with grounded citations are verified.
+- **Justification:** Core civic features, RAG retrieval across 8 schemes with Indic phonetic normalization and bounded fuzzy fallback, deterministic statutory eligibility engine with contradiction detection, Neon PostgreSQL persistence, security controls (SQL injection resistance, XSS neutralization, JWT HMAC validation, multi-tenant draft & PDF isolation), and live Groq AI answers (`llama-3.3-70b-versatile`) with grounded citations are verified live.
 - **Release Conditions & Blockers:**
   1. *External API Integrations:* MeitY Bhashini Voice API and Meta WhatsApp Cloud API remain **`BLOCKED`** pending official credentials in the Render dashboard. Native browser Web Speech API and mocked webhook verification remain active.
-  2. *Deployment Sync:* The previous release SHA `681eb66d949779fdfa2f087b9cfd244849a05041` is healthy on Render. The new commit containing retrieval phonetic hardening, independent benchmark, deep source provenance URLs, and eligibility contradiction guards must be deployed to Render via automated git push.
+  2. *Live Deployment Parity:* Commit [`d54ace0`](https://github.com/ShivayAgarwal08/jansahayak/commit/d54ace0) is **100% deployed and live on Render** (`git_commit: "d54ace04f77455cf1b85ff60035806b3bda2ca6a"` confirmed via live `/api/health`).
 
 ---
 
@@ -15,12 +15,15 @@
 
 | Domain / Dimension | Verification Result & Evidence | Status |
 | :--- | :--- | :---: |
-| **Git Revision & Sync** | Working tree staged for retrieval hardening and independent benchmark. | **PASS** |
-| **Backend Deployed SHA** | Render running commit `681eb66d949779fdfa2f087b9cfd244849a05041` (confirmed via live `/api/health`). | **PASS** |
-| **Live Backend Health** | HTTP 200 on `/api/health` (`status: "healthy"`, `timestamp: "2026-10-19T00:23:43Z"`). | **PASS** |
+| **Git Revision & Sync** | Local HEAD [`d54ace0`](https://github.com/ShivayAgarwal08/jansahayak/commit/d54ace0) synchronized with GitHub `origin/main`. Working tree clean. | **PASS** |
+| **Backend Deployed SHA** | Render running commit `d54ace04f77455cf1b85ff60035806b3bda2ca6a` (confirmed via live `/api/health`). | **PASS** |
+| **Runtime Code Parity** | 100% parity between local HEAD, GitHub `origin/main`, and deployed Render container. | **PASS** |
+| **Live Backend Health** | HTTP 200 on `/api/health` (`status: "healthy"`, `timestamp: "2026-10-19T00:29:37Z"`). | **PASS** |
 | **Live Database Health** | HTTP 200 on `/api/health/db` (`status: "healthy"`, `database: "connected"`, `dialect: "postgresql"`). | **PASS** |
 | **Live Assistant Status** | HTTP 200 on `/api/assistant/status` (`groq_configured: true`, `model: "llama-3.3-70b-versatile"`, `status: "online"`). | **PASS** |
-| **Phonetic Typo Regression** | Both known failures ("pardon muntri...", "ayusman bhrat...") resolved to Top-1. | **PASS** |
+| **Live Typo 1 Search** | Live `/api/assistant/search-documents` on Render returns PM-KISAN Top-1 for `"pardon muntri..."`. | **PASS** |
+| **Live Typo 2 Search** | Live `/api/assistant/search-documents` on Render returns Ayushman Bharat Top-1 for `"ayusman bhrat..."`. | **PASS** |
+| **Live Typo Chat Grounding** | Live `POST /api/assistant/chat` on Render returns Groq answer citing 4 official PM-KISAN passages. | **PASS** |
 | **Independent Evaluation Set** | 35-query benchmark unanchored from `DOMAIN_INTENTS`: **88.9% Top-1, 100% TN Abstention, 0% FPR**. | **PASS** |
 | **Deep Source Provenance** | All 8 schemes updated with deep official guideline/gazette PDF URLs & dates. | **PASS** |
 | **Eligibility Contradiction Guard** | Added profile contradiction detector (landless vs holding, adult vs minor) with unit tests. | **PASS** |
@@ -162,17 +165,25 @@ Unit tests verifying contradiction detection and statutory age/land boundaries w
 
 ### Production Live Endpoints Probe
 Probed live on Render (`https://jansahayak-backend-kvuq.onrender.com`):
-- `GET /api/health` -> HTTP 200 OK (`git_commit: "681eb66d949779fdfa2f087b9cfd244849a05041"`)
+- `GET /api/health` -> HTTP 200 OK (`git_commit: "d54ace04f77455cf1b85ff60035806b3bda2ca6a"`, `timestamp: "2026-10-19T00:29:37Z"`)
 - `GET /api/health/db` -> HTTP 200 OK (`status: "healthy"`, `database: "connected"`, `dialect: "postgresql"`)
 - `GET /api/assistant/status` -> HTTP 200 OK (`groq_configured: true`, `model: "llama-3.3-70b-versatile"`, `status: "online"`)
+- `GET /api/assistant/search-documents?query=pardon%20muntri%20kishaan%20samann%20nidhy%20do%20hazaar&limit=1`:
+  * Returns Top-1 PM-KISAN guidelines (page 1) with phonetic match reasons (`kishaan~kisaan, samann~samman, nidhy~nidhi`).
+- `GET /api/assistant/search-documents?query=ayusman%20bhrat%20rogoya%20bima%20500000&limit=1`:
+  * Returns Top-1 Ayushman Bharat PM-JAY guidelines with health insurance coverage match.
+- `POST /api/assistant/chat` with `{"query": "pardon muntri kishaan samann nidhy do hazaar"}`:
+  * Returns Groq (`llama-3.3-70b-versatile`) structured answer citing 4 official PM-KISAN guideline passages.
 
 ---
 
 ## 7. Priority 6: Release Evidence & Git State
 
 ### Current Commit Status
-- **Current Deployed Render SHA:** `681eb66d949779fdfa2f087b9cfd244849a05041`
-- **Files Modified for Retrieval Hardening:**
+- **Current Deployed Render SHA:** `d54ace04f77455cf1b85ff60035806b3bda2ca6a` (Confirmed via live `/api/health`)
+- **GitHub `origin/main` SHA:** `d54ace04f77455cf1b85ff60035806b3bda2ca6a`
+- **Parity Status:** 100% code and deployment parity across local workspace, GitHub `origin/main`, and Render runtime container.
+- **Files Modified for Retrieval Hardening & Evidence:**
   * `backend/app/services/rag/retrieval.py` (Indic phonetic normalizer, gated fuzzy fallback, token scorer)
   * `backend/app/services/rag/seed_corpus.py` (Deep guideline PDF URLs & dates for all 8 schemes)
   * `backend/app/db/seed_data.py` (Synchronized deep PDF URLs & dates)
@@ -188,12 +199,12 @@ Probed live on Render (`https://jansahayak-backend-kvuq.onrender.com`):
 ### Final Verdict: **`CONDITIONAL PASS`**
 
 ### Summary of Passed Dimensions
-1. **Indic Phonetic Typo Hardening:** Both known failures resolved; abstention preserved on unrelated queries.
+1. **Indic Phonetic Typo Hardening:** Both known failures resolved and verified live in production on Render.
 2. **Genuinely Independent Evaluation Set:** 35 unanchored queries executed with 88.9% Top-1, 100% true negative abstention, and 0% false positives.
 3. **Deep Source Provenance:** All 8 schemes updated with exact official guideline PDFs, gazette references, and publication dates.
 4. **Contradiction Detection:** Conflicting citizen facts trigger `REQUIRES_OFFICIAL_CONFIRMATION` instead of silent promotion to eligible.
 5. **Full Stack Quality:** 86 backend tests pass, frontend builds cleanly in 6.39s with 0 errors.
+6. **Live Production Parity:** Commit `d54ace0` is 100% deployed and serving on Render.
 
 ### Remaining Conditions for Full Production Release
-1. **Deploy New Commit to Render:** Push the retrieval hardening commit to `origin/main` to trigger automated deployment on Render.
-2. **Inject External API Credentials:** Add `BHASHINI_API_KEY`, `BHASHINI_USER_ID`, and WhatsApp Cloud API credentials in Render environment settings to unblock voice and WhatsApp channels.
+1. **External API Credentials Injection:** Add `BHASHINI_API_KEY`, `BHASHINI_USER_ID`, and WhatsApp Cloud API credentials in Render environment settings to unblock voice and WhatsApp channels. (Browser Web Speech API and webhook validation remain active fallbacks).
