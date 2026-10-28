@@ -258,8 +258,89 @@ Carpenter (Suthar), Boat Maker, Armourer, Blacksmith (Lohar), Hammer & Tool Kit 
 Scheme Benefits:
 - PM Vishwakarma Certificate and ID Card.
 - Skill Upgradation: 5-7 days Basic Training with ₹500 per day stipend.
-- Modern Toolkit Incentive: Grant of ₹15,000 in electronic vouchers for acquiring modern quality tools.
+- Modern Toolkit Incentive: Grant of ₹15,00,00 in electronic vouchers for acquiring modern quality tools.
 - Enterprise Credit: Collateral-free enterprise development loans up to ₹3,00,000 in two tranches (₹1,00,000 first tranche, ₹2,00,000 second tranche) at a concessional interest rate of 5%."""
+            )
+        ]
+    },
+    {
+        "scheme_slug": "atal-pension-yojana",
+        "title": "Atal Pension Yojana Operational Guidelines & Scheme Architecture",
+        "source_url": "https://www.npscra.nsdl.co.in/scheme-details.php",
+        "authority": "Pension Fund Regulatory and Development Authority (PFRDA), Govt of India",
+        "document_reference": "PFRDA/2015/01/APY/1",
+        "doc_type": "guidelines",
+        "ocr_status": "not_needed",
+        "pages": [
+            (
+                1,
+                """1. OBJECTIVE & ELIGIBILITY ARCHITECTURE OF ATAL PENSION YOJANA (APY)
+Atal Pension Yojana (APY) is a flagship social security scheme launched to address longevity risk among workers in the unorganized sector. The scheme provides a guaranteed minimum monthly pension ranging from ₹1,000 to ₹5,000 to subscribers upon attaining the age of 60.
+
+Key Eligibility Parameters:
+- Entry Age: Open to all Indian citizens between 18 and 40 years of age.
+- Bank Account: Must hold an active savings bank account or post office savings account.
+- Income Tax Exclusion: In accordance with Ministry of Finance notification, from 1st October 2022, any citizen who is or has been an income tax payer under the Income Tax Act, 1961 is NOT eligible to join APY.
+- Minimum Contribution Horizon: At least 20 years of continuous contributions are required, starting between ages 18 and 40."""
+            ),
+            (
+                2,
+                """2. PENSION TIERS, CONTRIBUTION SCHEDULE & TRIPLE BENEFIT
+Subscribers can choose fixed monthly pension tiers: ₹1,000, ₹2,000, ₹3,000, ₹4,000, or ₹5,000 per month. Monthly contributions depend on the entry age:
+- For entry at age 18: ₹42/month for ₹1,000 pension; ₹210/month for ₹5,000 pension.
+- For entry at age 40: ₹291/month for ₹1,000 pension; ₹1,454/month for ₹5,000 pension.
+
+Triple Benefit Assurance:
+1. Guaranteed Monthly Pension to the subscriber from age 60 till death.
+2. Upon subscriber's demise, the exact same monthly pension continues to the spouse for life.
+3. Upon demise of both subscriber and spouse, the entire accumulated pension wealth corpus (₹1.7 lakh for ₹1,000 slab up to ₹8.5 lakh for ₹5,000 slab) is returned to the registered nominee."""
+            )
+        ]
+    },
+    {
+        "scheme_slug": "pm-jeevan-jyoti-bima",
+        "title": "Pradhan Mantri Jeevan Jyoti Bima Yojana (PMJJBY) Rules & Guidelines",
+        "source_url": "https://financialservices.gov.in/insurance-divisions/Government-Sponsored-Socially-Oriented-Insurance-Schemes/Pradhan-Mantri-Jeevan-Jyoti-Bima-Yojana(PMJJBY)",
+        "authority": "Department of Financial Services, Ministry of Finance, Govt of India",
+        "document_reference": "DFS Notification F.No. H-12011/2/2015-Ins.II",
+        "doc_type": "guidelines",
+        "ocr_status": "not_needed",
+        "pages": [
+            (
+                1,
+                """1. PMJJBY COVERAGE, ELIGIBILITY & NOMINATION TERMS
+Pradhan Mantri Jeevan Jyoti Bima Yojana (PMJJBY) is a one-year life insurance scheme renewable from year to year, offering life insurance coverage for death due to any cause.
+
+Key Rules:
+- Eligibility: All individual savings bank or post office account holders between 18 and 50 years of age.
+- Benefit Amount: ₹2,00,000 (Rupees Two Lakh) payable to the nominee on death of the insured due to any cause.
+- Annual Premium: ₹436 per annum per member, auto-debited in a single installment from the subscriber's bank account in May/June.
+- Enrolment Window: 1st June to 31st May annual coverage cycle. Pro-rata premium applies for mid-year joiners.
+- Maximum Coverage Limit: In case of multiple bank accounts, coverage is strictly capped at ₹2,00,000 per citizen. No health certificate or medical examination is required."""
+            )
+        ]
+    },
+    {
+        "scheme_slug": "pm-yasasvi",
+        "title": "PM Young Achievers Scholarship Award Scheme for Vibrant India (PM-YASASVI) Guidelines",
+        "source_url": "https://socialjustice.gov.in/schemes/pm-yasasvi",
+        "authority": "Ministry of Social Justice and Empowerment, Govt of India",
+        "document_reference": "MoSJE Scheme Notification No. 11014/01/2021-BC",
+        "doc_type": "guidelines",
+        "ocr_status": "not_needed",
+        "pages": [
+            (
+                1,
+                """1. PM-YASASVI TOP CLASS SCHOOL SCHOLARSHIP SCHEME
+The PM Young Achievers Scholarship Award Scheme for Vibrant India (PM-YASASVI) provides prestigious financial scholarships to meritorious students belonging to Other Backward Classes (OBC), Economically Backward Classes (EBC), and De-Notified, Nomadic and Semi-Nomadic Tribes (DNT).
+
+Scheme Dimensions & Financial Scale:
+- Target Beneficiaries: Meritorious students studying in Class 9, 10, 11, and 12 in shortlisted top-class schools.
+- Scholarship Ceilings:
+  * For Class 9 and 10 students: Up to ₹75,000 per annum per student.
+  * For Class 11 and 12 students: Up to ₹1,25,000 per annum per student.
+- Income Ceiling: Annual parental / family income from all sources must NOT exceed ₹2,50,000 (₹2.5 Lakh).
+- Application Mode: Transparent online application through the National Scholarship Portal (NSP: scholarships.gov.in) with Aadhaar authentication."""
             )
         ]
     }

@@ -61,6 +61,8 @@ async def generate_grounded_answer(
     query: str,
     passages: List[Passage],
     preferred_language: str = "en",
+    detected_language: str = "en",
+    response_language: str = "en",
     extracted_profile: Optional[Dict[str, Any]] = None,
     eligibility_evaluations: Optional[List[Dict[str, Any]]] = None,
     follow_up_prompt: Optional[str] = None
@@ -128,6 +130,12 @@ async def generate_grounded_answer(
             )
     eval_text = "\n".join(eval_summary) if eval_summary else "No scheme evaluation completed."
 
+    lang_instruction = ""
+    if response_language == "hi":
+        lang_instruction = "\nLANGUAGE INSTRUCTION: The citizen requires Hindi. You MUST formulate your entire response in clear, respectful, natural Hindi (Devanagari script). Retain official scheme names (e.g. PM-KISAN, Ayushman Bharat) clearly."
+    elif response_language == "hi-Latn":
+        lang_instruction = "\nLANGUAGE INSTRUCTION: The citizen asked in Hinglish/Latin Hindi. Respond in easy-to-understand Hindi or Hinglish that is natural for an Indian citizen."
+
     user_message = (
         f"<VERIFIED_GOVERNMENT_EVIDENCE>\n"
         f"{evidence_text}\n"
@@ -139,7 +147,9 @@ async def generate_grounded_answer(
         f"{eval_text}\n"
         f"</DETERMINISTIC_ELIGIBILITY_EVALUATION>\n\n"
         f"Citizen Query: {query}\n"
-        f"Preferred Language: {preferred_language}\n"
+        f"Detected Query Language: {detected_language}\n"
+        f"Response Target Language: {response_language}\n"
+        f"{lang_instruction}\n"
         + (f"Suggested Follow-Up: {follow_up_prompt}\n" if follow_up_prompt else "")
         + "Provide a grounded, citizen-first answer based strictly on the above evidence."
     )
@@ -225,54 +235,84 @@ async def generate_grounded_answer(
 
     # 2. Deterministic Non-Hallucinatory Fallback
     # Transparently inform citizen that AI is in offline/fallback mode and present exact rule synthesis
-    if fallback_reason == "unconfigured":
-        notice_line = "> ℹ️ **Notice: Live AI generation is currently offline (API key unconfigured). JanSahayak is displaying verified deterministic rule records.**\n"
-    elif fallback_reason == "provider_timeout":
-        notice_line = "> ⚠️ **Notice: Live AI service timed out. JanSahayak has safely engaged verified deterministic rule records.**\n"
-    elif safe_err:
-        notice_line = f"> ⚠️ **Notice: Live AI provider encountered a temporary error ({fallback_reason}: {safe_err}). JanSahayak has safely engaged verified deterministic rule records.**\n"
+    is_hi = (response_language == "hi")
+
+    if is_hi:
+        if fallback_reason == "unconfigured":
+            notice_line = "> ℹ️ **सूचना: लाइव एआई जनरेशन वर्तमान में ऑफलाइन है। जनसहायक सत्यापित सरकारी नियम रिकॉर्ड प्रदर्शित कर रहा है।**\n"
+        elif fallback_reason == "provider_timeout":
+            notice_line = "> ⚠️ **सूचना: लाइव एआई सेवा में समय समाप्त (टाइमआउट) हुआ। जनसहायक सत्यापित नियम रिकॉर्ड प्रदर्शित कर रहा है।**\n"
+        elif safe_err:
+            notice_line = f"> ⚠️ **सूचना: लाइव एआई प्रदाता में अस्थायी त्रुटि ({fallback_reason}: {safe_err})। जनसहायक सत्यापित नियम रिकॉर्ड प्रदर्शित कर रहा है।**\n"
+        else:
+            notice_line = f"> ⚠️ **सूचना: लाइव एआई प्रदाता में अस्थायी त्रुटि ({fallback_reason})। जनसहायक सत्यापित नियम रिकॉर्ड प्रदर्शित कर रहा है।**\n"
     else:
-        notice_line = f"> ⚠️ **Notice: Live AI provider encountered a temporary error ({fallback_reason}). JanSahayak has safely engaged verified deterministic rule records.**\n"
+        if fallback_reason == "unconfigured":
+            notice_line = "> ℹ️ **Notice: Live AI generation is currently offline (API key unconfigured). JanSahayak is displaying verified deterministic rule records.**\n"
+        elif fallback_reason == "provider_timeout":
+            notice_line = "> ⚠️ **Notice: Live AI service timed out. JanSahayak has safely engaged verified deterministic rule records.**\n"
+        elif safe_err:
+            notice_line = f"> ⚠️ **Notice: Live AI provider encountered a temporary error ({fallback_reason}: {safe_err}). JanSahayak has safely engaged verified deterministic rule records.**\n"
+        else:
+            notice_line = f"> ⚠️ **Notice: Live AI provider encountered a temporary error ({fallback_reason}). JanSahayak has safely engaged verified deterministic rule records.**\n"
 
     lines = [notice_line]
 
     if eligibility_evaluations:
-        lines.append("### 📋 Scheme Eligibility Assessment")
+        heading = "### 📋 योजना पात्रता मूल्यांकन" if is_hi else "### 📋 Scheme Eligibility Assessment"
+        lines.append(heading)
         for ev in eligibility_evaluations:
-            badge = "✅ ELIGIBLE" if ev['status'] == "eligible" else ("⚠️ POTENTIALLY ELIGIBLE" if ev['status'] == "possibly_eligible" else "❌ INELIGIBLE")
+            if is_hi:
+                badge = "✅ पात्र (ELIGIBLE)" if ev['status'] == "eligible" else ("⚠️ संभावित रूप से पात्र (POTENTIALLY ELIGIBLE)" if ev['status'] == "possibly_eligible" else "❌ अपात्र (INELIGIBLE)")
+            else:
+                badge = "✅ ELIGIBLE" if ev['status'] == "eligible" else ("⚠️ POTENTIALLY ELIGIBLE" if ev['status'] == "possibly_eligible" else "❌ INELIGIBLE")
+            
             lines.append(f"#### {ev['scheme_name']} — {badge}")
             lines.append(f"{ev['summary_explanation']}\n")
 
             if ev.get("satisfied_conditions"):
-                lines.append("**Satisfied Conditions:**")
+                lines.append("**संतुष्ट शर्तें (Satisfied Conditions):**" if is_hi else "**Satisfied Conditions:**")
                 for sc in ev["satisfied_conditions"]:
                     lines.append(f"- ✓ **{sc['criterion']}**: {sc.get('citizen_value', 'Met')}")
 
             if ev.get("unknown_conditions"):
-                lines.append("\n**Information Needed to Confirm:**")
+                lines.append("\n**पुष्टि के लिए आवश्यक जानकारी (Information Needed to Confirm):**" if is_hi else "\n**Information Needed to Confirm:**")
                 for uc in ev["unknown_conditions"]:
                     lines.append(f"- ❓ {uc.get('prompt', uc['criterion'])}")
 
             if ev.get("unsatisfied_conditions"):
-                lines.append("\n**Unsatisfied Criteria:**")
+                lines.append("\n**अपात्रता शर्तें (Unsatisfied Criteria):**" if is_hi else "\n**Unsatisfied Criteria:**")
                 for unc in ev["unsatisfied_conditions"]:
                     lines.append(f"- ✗ **{unc['criterion']}**: {unc.get('reason', 'Not met')}")
 
-            lines.append(f"\n🔗 **Official Portal**: [{ev['official_sources'][0]['url']}]({ev['official_sources'][0]['url']})\n")
+            portal_label = "आधिकारिक पोर्टल" if is_hi else "Official Portal"
+            lines.append(f"\n🔗 **{portal_label}**: [{ev['official_sources'][0]['url']}]({ev['official_sources'][0]['url']})\n")
 
     elif passages:
         top = passages[0]
-        lines.append(f"### 📋 Information from Verified Records: {top.scheme_name}")
+        heading = f"### 📋 सत्यापित रिकॉर्ड से जानकारी: {top.scheme_name}" if is_hi else f"### 📋 Information from Verified Records: {top.scheme_name}"
+        portal_label = "आधिकारिक सरकारी पोर्टल" if is_hi else "Official Government Portal"
+        lines.append(heading)
         lines.append(top.content)
-        lines.append(f"\n🔗 **Official Government Portal**: [{top.url}]({top.url})\n")
+        lines.append(f"\n🔗 **{portal_label}**: [{top.url}]({top.url})\n")
     else:
-        lines.append("We could not find matching verified government scheme guidelines for your query.")
-        lines.append("Please visit [india.gov.in](https://www.india.gov.in) to browse national schemes.")
+        if is_hi:
+            lines.append("आपके प्रश्न के लिए कोई मेल खाती सत्यापित सरकारी योजना नियमावली नहीं मिली।")
+            lines.append("राष्ट्रीय योजनाओं को देखने के लिए कृपया [india.gov.in](https://www.india.gov.in) पर जाएं।")
+        else:
+            lines.append("We could not find matching verified government scheme guidelines for your query.")
+            lines.append("Please visit [india.gov.in](https://www.india.gov.in) to browse national schemes.")
 
     if follow_up_prompt:
-        lines.append(f"\n---\n**💬 Next Question for You:**\n{follow_up_prompt}")
+        q_label = "**💬 आपके लिए अगला प्रश्न:**" if is_hi else "**💬 Next Question for You:**"
+        lines.append(f"\n---\n{q_label}\n{follow_up_prompt}")
 
-    lines.append("\n*Note: JanSahayak provides rule-based guidance and never guarantees official benefits. Final approval rests with the issuing government authority.*")
+    disclaimer = (
+        "\n*नोट: जनसहायक नियम-आधारित मार्गदर्शन प्रदान करता है और कभी भी सरकारी लाभ की गारंटी नहीं देता है। अंतिम अनुमोदन जारीकर्ता सरकारी प्राधिकरण के पास है।*"
+        if is_hi
+        else "\n*Note: JanSahayak provides rule-based guidance and never guarantees official benefits. Final approval rests with the issuing government authority.*"
+    )
+    lines.append(disclaimer)
 
     fallback_text = "\n".join(lines)
 

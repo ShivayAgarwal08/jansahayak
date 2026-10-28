@@ -1,18 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage, LANGUAGES } from '../../context/LanguageContext';
 import {
+  Home,
   Compass,
-  FileCheck2,
   Mic,
   FileText,
+  FileCheck2,
   AlertCircle,
+  Scale,
+  ChevronDown,
   User as UserIcon,
   Globe,
   Menu,
   X,
-  Sparkles,
   LogOut,
   ShieldCheck
 } from 'lucide-react';
@@ -22,23 +24,53 @@ export const Navbar: React.FC = () => {
   const { currentLanguage, setLanguage, t } = useLanguage();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [langMenuOpen, setLangMenuOpen] = useState(false);
+  const [moreMenuOpen, setMoreMenuOpen] = useState(false);
   const location = useLocation();
 
-  const navLinks = [
-    { to: '/schemes', label: t('nav_schemes'), icon: Compass },
-    { to: '/eligibility', label: t('nav_eligibility'), icon: FileCheck2 },
-    { to: '/assistant', label: t('nav_assistant'), icon: Mic },
-    { to: '/applications', label: 'Application Prep', icon: FileText },
-    { to: '/rti', label: t('nav_rti'), icon: FileText },
-    { to: '/grievances', label: t('nav_grievance'), icon: AlertCircle },
+  const langRef = useRef<HTMLDivElement>(null);
+  const moreRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdowns on outside click
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (langRef.current && !langRef.current.contains(event.target as Node)) {
+        setLangMenuOpen(false);
+      }
+      if (moreRef.current && !moreRef.current.contains(event.target as Node)) {
+        setMoreMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Primary navigation items requested in Phase 2
+  const primaryNavLinks = [
+    { to: '/', label: t('nav_home') || 'Home', icon: Home },
+    { to: '/schemes', label: t('nav_find_schemes') || 'Find Schemes', icon: Compass },
+    { to: '/assistant', label: t('nav_ai_assistant') || 'AI Assistant', icon: Mic },
+    { to: '/applications', label: t('nav_applications') || 'My Applications', icon: FileText },
+  ];
+
+  // Secondary utilities moved into "More Services" dropdown
+  const secondaryNavLinks = [
+    { to: '/eligibility', label: t('nav_eligibility') || 'Eligibility Calculator', icon: FileCheck2 },
+    { to: '/compare', label: t('nav_compare') || 'Compare Schemes', icon: Scale },
+    { to: '/rti', label: t('nav_rti') || 'RTI Drafter (Sec 6(1))', icon: FileText },
+    { to: '/grievances', label: t('nav_grievance') || 'Public Grievance (CPGRAMS)', icon: AlertCircle },
   ];
 
   const currentLangObj = LANGUAGES.find((l) => l.code === currentLanguage) || LANGUAGES[0];
-
   const isActive = (path: string) => location.pathname === path;
+  const isSecondaryActive = secondaryNavLinks.some((l) => location.pathname === l.to);
 
   return (
     <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-ivory-200">
+      {/* Discreet Platform Identity Banner */}
+      <div className="bg-ivory-100/80 border-b border-ivory-200 text-center py-1 px-4 text-[11px] text-navy-700/80">
+        <span className="font-semibold text-leaf-800">JanSahayak</span> — Independent Civic AI Assistance Platform • Not an Official Government Agency
+      </div>
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 sm:h-20">
           
@@ -61,8 +93,8 @@ export const Navbar: React.FC = () => {
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center gap-1">
-            {navLinks.map((link) => {
+          <nav className="hidden lg:flex items-center gap-1" aria-label="Main Navigation">
+            {primaryNavLinks.map((link) => {
               const Icon = link.icon;
               const active = isActive(link.to);
               return (
@@ -71,7 +103,7 @@ export const Navbar: React.FC = () => {
                   to={link.to}
                   className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-semibold transition-colors ${
                     active
-                      ? 'bg-leaf-50 text-leaf-800 border border-leaf-200/80'
+                      ? 'bg-leaf-50 text-leaf-800 border border-leaf-200/80 shadow-xs'
                       : 'text-navy-900/80 hover:text-navy-900 hover:bg-ivory-100'
                   }`}
                 >
@@ -80,18 +112,65 @@ export const Navbar: React.FC = () => {
                 </Link>
               );
             })}
+
+            {/* Compact "More Services" Dropdown */}
+            <div className="relative" ref={moreRef}>
+              <button
+                type="button"
+                onClick={() => setMoreMenuOpen(!moreMenuOpen)}
+                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-semibold transition-colors ${
+                  isSecondaryActive
+                    ? 'bg-leaf-50 text-leaf-800 border border-leaf-200/80'
+                    : 'text-navy-900/80 hover:text-navy-900 hover:bg-ivory-100'
+                }`}
+                aria-expanded={moreMenuOpen}
+                aria-haspopup="true"
+              >
+                <span>{t('nav_more_services') || 'More Services'}</span>
+                <ChevronDown className={`w-3.5 h-3.5 transition-transform ${moreMenuOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              {moreMenuOpen && (
+                <div className="absolute left-0 mt-2 w-64 bg-white rounded-xl shadow-civic-hover border border-ivory-200 py-1.5 z-50">
+                  <div className="px-3 py-1 text-[11px] font-bold text-navy-700/60 uppercase tracking-wider">
+                    Secondary Civic Tools
+                  </div>
+                  {secondaryNavLinks.map((sublink) => {
+                    const SubIcon = sublink.icon;
+                    const subActive = isActive(sublink.to);
+                    return (
+                      <Link
+                        key={sublink.to}
+                        to={sublink.to}
+                        onClick={() => setMoreMenuOpen(false)}
+                        className={`flex items-center gap-2.5 px-3.5 py-2.5 text-sm transition-colors ${
+                          subActive
+                            ? 'bg-leaf-50 text-leaf-800 font-bold'
+                            : 'text-navy-900 hover:bg-ivory-100'
+                        }`}
+                      >
+                        <SubIcon className={`w-4 h-4 ${subActive ? 'text-leaf-700' : 'text-navy-700/60'}`} />
+                        <span>{sublink.label}</span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </nav>
 
           {/* Right Action Items */}
           <div className="flex items-center gap-2 sm:gap-3">
             
             {/* Language Switcher Dropdown */}
-            <div className="relative">
+            <div className="relative" ref={langRef}>
               <button
                 type="button"
                 onClick={() => setLangMenuOpen(!langMenuOpen)}
                 className="flex items-center gap-1.5 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl border border-ivory-200 hover:bg-ivory-100 text-xs sm:text-sm font-semibold text-navy-900 transition-colors"
                 title="Select Language / भाषा चुनें"
+                aria-expanded={langMenuOpen}
+                aria-haspopup="true"
               >
                 <Globe className="w-4 h-4 text-leaf-700" />
                 <span>{currentLangObj.native}</span>
@@ -173,33 +252,64 @@ export const Navbar: React.FC = () => {
 
       {/* Mobile Drawer Navigation */}
       {mobileMenuOpen && (
-        <div className="lg:hidden border-t border-ivory-200 bg-white px-4 pt-3 pb-6 space-y-1.5">
-          {navLinks.map((link) => {
-            const Icon = link.icon;
-            const active = isActive(link.to);
-            return (
-              <Link
-                key={link.to}
-                to={link.to}
-                onClick={() => setMobileMenuOpen(false)}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-base font-semibold ${
-                  active ? 'bg-leaf-50 text-leaf-800 border border-leaf-200' : 'text-navy-900 hover:bg-ivory-100'
-                }`}
-              >
-                <Icon className={`w-5 h-5 ${active ? 'text-leaf-700' : 'text-navy-700'}`} />
-                {link.label}
-              </Link>
-            );
-          })}
+        <div className="lg:hidden border-t border-ivory-200 bg-white px-4 pt-3 pb-6 space-y-3">
+          <div className="space-y-1">
+            <span className="text-[11px] font-bold text-navy-700/60 uppercase tracking-wider block px-2">
+              Primary Navigation
+            </span>
+            {primaryNavLinks.map((link) => {
+              const Icon = link.icon;
+              const active = isActive(link.to);
+              return (
+                <Link
+                  key={link.to}
+                  to={link.to}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold ${
+                    active ? 'bg-leaf-50 text-leaf-800 border border-leaf-200' : 'text-navy-900 hover:bg-ivory-100'
+                  }`}
+                >
+                  <Icon className={`w-4 h-4 ${active ? 'text-leaf-700' : 'text-navy-700'}`} />
+                  {link.label}
+                </Link>
+              );
+            })}
+          </div>
+
+          <div className="pt-2 border-t border-ivory-200 space-y-1">
+            <span className="text-[11px] font-bold text-navy-700/60 uppercase tracking-wider block px-2">
+              More Services
+            </span>
+            {secondaryNavLinks.map((sublink) => {
+              const SubIcon = sublink.icon;
+              const subActive = isActive(sublink.to);
+              return (
+                <Link
+                  key={sublink.to}
+                  to={sublink.to}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={`flex items-center gap-3 px-3.5 py-2 rounded-xl text-sm font-medium ${
+                    subActive ? 'bg-leaf-50 text-leaf-800 font-bold' : 'text-navy-900/80 hover:bg-ivory-100'
+                  }`}
+                >
+                  <SubIcon className={`w-4 h-4 ${subActive ? 'text-leaf-700' : 'text-navy-700/60'}`} />
+                  {sublink.label}
+                </Link>
+              );
+            })}
+          </div>
+
           {isAuthenticated && (
-            <Link
-              to="/dashboard"
-              onClick={() => setMobileMenuOpen(false)}
-              className="flex items-center gap-3 px-4 py-3 rounded-xl text-base font-semibold text-navy-900 hover:bg-ivory-100"
-            >
-              <UserIcon className="w-5 h-5 text-saffron-500" />
-              Citizen Dashboard
-            </Link>
+            <div className="pt-2 border-t border-ivory-200">
+              <Link
+                to="/dashboard"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold text-navy-900 hover:bg-ivory-100"
+              >
+                <UserIcon className="w-4 h-4 text-saffron-500" />
+                Citizen Dashboard
+              </Link>
+            </div>
           )}
         </div>
       )}

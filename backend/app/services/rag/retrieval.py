@@ -93,47 +93,122 @@ SCAM_OR_UNRELATED_INDICATORS = {
     "nullpointerexception", "python programming", "switzerland"
 }
 
-# Domain Intent Mappings with high-precision keywords
+# Domain Intent Mappings with high-precision keywords (both Romanized and Devanagari Hindi)
 DOMAIN_INTENTS = {
     "pm-kisan": {
-        "keywords": {"farmer", "farmers", "farming", "kisan", "krishi", "land", "landholding", "cultivable", "cultivator", "bigha", "bighas", "acre", "acres", "agriculture", "agricultural", "pm-kisan", "pmkisan", "khet", "kheti", "fasal", "krishak", "6000 rupaye", "kisaan", "samman", "nidhi", "samman nidhy"},
+        "keywords": {
+            "farmer", "farmers", "farming", "kisan", "krishi", "land", "landholding", "cultivable", "cultivator",
+            "bigha", "bighas", "acre", "acres", "agriculture", "agricultural", "pm-kisan", "pmkisan", "khet", "kheti",
+            "fasal", "krishak", "6000 rupaye", "kisaan", "samman", "nidhi", "samman nidhy",
+            "किसान", "खेती", "कृषि", "बीघा", "जमीन", "खेत", "फसल", "कृषक", "सम्मान निधि", "पीएम किसान"
+        },
         "boost": 25,
         "reason": "Matched agricultural & farmer landholding criteria"
     },
     "pmay-g": {
-        "keywords": {"housing", "house", "shelter", "kutcha", "pucca", "dilapidated", "awas", "gramin", "houseless", "roof", "room", "rural housing", "pmay", "pmay-g", "pmayg", "awas yojana", "kachha", "pakka", "makan", "ghar", "gaon", "chhat", "aawas"},
+        "keywords": {
+            "housing", "house", "shelter", "kutcha", "pucca", "dilapidated", "awas", "gramin", "houseless",
+            "roof", "room", "rural housing", "pmay", "pmay-g", "pmayg", "awas yojana", "kachha", "pakka",
+            "makan", "ghar", "gaon", "chhat", "aawas",
+            "आवास", "मकान", "घर", "ग्रामीण", "कच्चा", "पक्का", "झोपड़ी", "छत", "बेघर", "पीएम आवास"
+        },
         "boost": 25,
         "reason": "Matched rural housing & dwelling condition criteria"
     },
     "ayushman-bharat-pmjay": {
-        "keywords": {"health", "hospital", "hospitalization", "medical", "treatment", "doctor", "illness", "surgery", "ayushman", "golden card", "5 lakh", "pmjay", "pm-jay", "healthcare", "ilaj", "dawa", "bimar", "bimari", "70 saal", "70 years", "aayushman", "pmjaay", "bharat", "arogya", "bima", "beema", "clinic"},
+        "keywords": {
+            "health", "hospital", "hospitalization", "medical", "treatment", "doctor", "illness", "surgery",
+            "ayushman", "golden card", "5 lakh", "pmjay", "pm-jay", "healthcare", "ilaj", "dawa", "bimar",
+            "bimari", "70 saal", "70 years", "aayushman", "pmjaay", "bharat", "arogya", "bima", "beema", "clinic",
+            "आयुष्मान", "इलाज", "अस्पताल", "दवा", "बीमार", "बीमारी", "स्वास्थ्य", "गोल्डन कार्ड", "आरोग्य"
+        },
         "boost": 25,
         "reason": "Matched health & secondary/tertiary hospital coverage criteria"
     },
     "pmmvy": {
-        "keywords": {"pregnant", "pregnancy", "maternity", "lactating", "delivery", "infant", "mother", "matru", "vandana", "first child", "institutional delivery", "pmmvy", "garbhavati", "mahila", "prasuti", "baccha", "bacche", "janm", "pmmvi"},
+        "keywords": {
+            "pregnant", "pregnancy", "maternity", "lactating", "delivery", "infant", "mother", "matru",
+            "vandana", "first child", "institutional delivery", "pmmvy", "garbhavati", "mahila", "prasuti",
+            "baccha", "bacche", "janm", "pmmvi",
+            "गर्भवती", "मातृत्व", "प्रसूति", "महिला", "मातृ वंदना", "शिशु", "बच्चा"
+        },
         "boost": 25,
         "reason": "Matched maternal health & pregnancy assistance criteria"
     },
     "ignoaps": {
-        "keywords": {"pension", "elderly", "senior", "senior citizen", "old age", "vridha", "60 years", "old", "destitute pension", "ignoaps", "nsap", "buzurg", "dadi", "dada"},
+        "keywords": {
+            "pension", "elderly", "senior", "senior citizen", "old age", "vridha", "60 years", "old",
+            "destitute pension", "ignoaps", "nsap", "buzurg", "dadi", "dada",
+            "वृद्धा", "पेंशन", "बुजुर्ग", "वरिष्ठ नागरिक", "वृद्धावस्था"
+        },
         "boost": 25,
         "reason": "Matched senior citizen social security pension criteria"
     },
     "sukanya-samriddhi-yojana": {
-        "keywords": {"girl child", "daughter", "sukanya", "samriddhi", "girl", "beti", "under 10", "child education", "ssy", "kanya", "chhoti", "samridhi", "dakghar", "gudiya"},
+        "keywords": {
+            "girl child", "daughter", "sukanya", "samriddhi", "girl", "beti", "under 10", "child education",
+            "ssy", "kanya", "chhoti", "samridhi", "dakghar", "gudiya",
+            "सुकन्या", "समृद्धि", "बेटी", "कन्या", "बालिका", "डाकघर"
+        },
+        "boost": 25,
+        "reason": "Matched girl child savings & education welfare criteria"
+    },
+    "sukanya-samriddhi": {
+        "keywords": {
+            "girl child", "daughter", "sukanya", "samriddhi", "girl", "beti", "under 10", "child education",
+            "ssy", "kanya", "chhoti", "samridhi", "dakghar", "gudiya",
+            "सुकन्या", "समृद्धि", "बेटी", "कन्या", "बालिका", "डाकघर"
+        },
         "boost": 25,
         "reason": "Matched girl child savings & education welfare criteria"
     },
     "pm-svanidhi": {
-        "keywords": {"vendor", "street vendor", "hawker", "thela", "rehri", "svanidhi", "micro credit", "working capital", "footpath", "pm-svanidhi", "handcart", "cart", "vegetable vendor", "fruit vendor", "sadak", "patri", "phal", "chai", "svanidi"},
+        "keywords": {
+            "vendor", "street vendor", "hawker", "thela", "rehri", "svanidhi", "micro credit", "working capital",
+            "footpath", "pm-svanidhi", "handcart", "cart", "vegetable vendor", "fruit vendor", "sadak", "patri",
+            "phal", "chai", "svanidi",
+            "रेहड़ी", "पटरी", "ठेला", "फेरीवाला", "स्वनिधि", "सड़क विक्रेता", "दुकानदार"
+        },
         "boost": 25,
         "reason": "Matched urban street vendor micro-credit criteria"
     },
     "pm-vishwakarma": {
-        "keywords": {"artisan", "vishwakarma", "carpenter", "blacksmith", "goldsmith", "potter", "mason", "tailor", "barber", "craftsperson", "traditional craft", "tool kit", "toolkit", "pm-vishwakarma", "pottery", "clay", "pots", "earthenware", "kumhaar", "lohar", "sonar", "cobbler", "sculptor", "traditional trade", "hand tools", "karigar", "auzar", "bartan"},
+        "keywords": {
+            "artisan", "vishwakarma", "carpenter", "blacksmith", "goldsmith", "potter", "mason", "tailor",
+            "barber", "craftsperson", "traditional craft", "tool kit", "toolkit", "pm-vishwakarma", "pottery",
+            "clay", "pots", "earthenware", "kumhaar", "lohar", "sonar", "cobbler", "sculptor", "traditional trade",
+            "hand tools", "karigar", "auzar", "bartan",
+            "विश्वकर्मा", "कारीगर", "बढ़ई", "लोहार", "सोनार", "कुम्हार", "दर्जी", "मोची", "राजमिस्त्री", "औजार"
+        },
         "boost": 25,
         "reason": "Matched traditional family artisan & craftsperson trade criteria"
+    },
+    "atal-pension-yojana": {
+        "keywords": {
+            "atal", "pension", "apy", "pension yojana", "atal pension", "old age pension", "guaranteed pension",
+            "5000 pension", "retirement", "unorganized", "pran", "pfrda", "budhapa",
+            "अटल", "पेंशन", "अटल पेंशन", "बुढ़ापा", "गारंटीकृत पेंशन", "सेवानिवृत्ति"
+        },
+        "boost": 25,
+        "reason": "Matched guaranteed monthly retirement pension criteria (APY)"
+    },
+    "pm-jeevan-jyoti-bima": {
+        "keywords": {
+            "jeevan jyoti", "pmjjby", "life insurance", "term life", "2 lakh bima", "200000", "436",
+            "bima yojana", "death benefit", "jansuraksha", "insurance", "beema",
+            "जीवन ज्योति", "बीमा", "जीवन बीमा", "टर्म लाइफ", "जनसुरक्षा"
+        },
+        "boost": 25,
+        "reason": "Matched affordable life insurance cover criteria (PMJJBY)"
+    },
+    "pm-yasasvi": {
+        "keywords": {
+            "yasasvi", "pm-yasasvi", "scholarship", "obc scholarship", "ebc", "dnt", "school scholarship",
+            "class 9", "class 10", "class 11", "class 12", "merit scholarship", "chatravriti", "chhatravritti", "padhai",
+            "यशस्वी", "छात्रवृत्ति", "स्कॉलरशिप", "ओबीसी छात्रवृत्ति", "पढ़ाई", "मेधावी"
+        },
+        "boost": 25,
+        "reason": "Matched top-class school education scholarship criteria (PM-YASASVI)"
     }
 }
 

@@ -439,6 +439,108 @@ def evaluate_scheme_eligibility(scheme: Any, profile: Dict[str, Any]) -> Eligibi
                 "prompt": "Do you practice one of the 18 traditional crafts (e.g., carpentry, blacksmithing, pottery, masonry, tailoring)?"
             })
 
+    # --- Atal Pension Yojana (APY) ---
+    elif slug == "atal-pension-yojana":
+        age = profile.get("age")
+        if age is not None:
+            if 18 <= age <= 40:
+                satisfied.append({
+                    "criterion": "Age Qualification",
+                    "official_rule": "Must be between 18 and 40 years of age at the time of joining.",
+                    "citizen_value": f"Age {age}"
+                })
+            else:
+                unsatisfied.append({
+                    "criterion": "Age Qualification",
+                    "official_rule": "Must be between 18 and 40 years of age.",
+                    "citizen_value": f"Age {age}",
+                    "reason": f"Citizen age {age} is outside the eligible APY entry window (18-40 years)."
+                })
+        else:
+            unknown.append({
+                "criterion": "Age Qualification",
+                "prompt": "What is your age (APY entry is eligible between 18 and 40 years)?"
+            })
+
+        pays_tax = profile.get("pays_income_tax")
+        if pays_tax is True:
+            unsatisfied.append({
+                "criterion": "Non-Taxpayer Rule",
+                "official_rule": "Income tax payers are barred from enrolling in APY as of Oct 1, 2022.",
+                "citizen_value": "Income Tax Payer",
+                "reason": "APY excludes citizens who pay income tax."
+            })
+        elif pays_tax is False:
+            satisfied.append({
+                "criterion": "Non-Taxpayer Rule",
+                "official_rule": "Must not be an income tax payer.",
+                "citizen_value": "Non-Taxpayer"
+            })
+        else:
+            unknown.append({
+                "criterion": "Tax Status",
+                "prompt": "Do you or have you paid income tax in the last financial year?"
+            })
+
+    # --- PM Jeevan Jyoti Bima Yojana (PMJJBY) ---
+    elif slug == "pm-jeevan-jyoti-bima":
+        age = profile.get("age")
+        if age is not None:
+            if 18 <= age <= 50:
+                satisfied.append({
+                    "criterion": "Age Qualification",
+                    "official_rule": "Must be between 18 and 50 years of age with a savings bank account.",
+                    "citizen_value": f"Age {age}"
+                })
+            else:
+                unsatisfied.append({
+                    "criterion": "Age Qualification",
+                    "official_rule": "Must be between 18 and 50 years of age.",
+                    "citizen_value": f"Age {age}",
+                    "reason": f"PMJJBY enrolment is available only up to age 50 (cover continues to 55 if renewed)."
+                })
+        else:
+            unknown.append({
+                "criterion": "Age Qualification",
+                "prompt": "What is your age (PMJJBY is available for ages 18 to 50)?"
+            })
+
+    # --- PM-YASASVI Scholarship ---
+    elif slug == "pm-yasasvi":
+        income = profile.get("annual_income")
+        if income is not None:
+            if income <= 250000:
+                satisfied.append({
+                    "criterion": "Family Income Ceiling",
+                    "official_rule": "Annual parent/guardian income must not exceed ₹2,50,000.",
+                    "citizen_value": f"₹{int(income):,}"
+                })
+            else:
+                unsatisfied.append({
+                    "criterion": "Family Income Ceiling",
+                    "official_rule": "Annual family income must not exceed ₹2.5 lakh.",
+                    "citizen_value": f"₹{int(income):,}",
+                    "reason": "Family income exceeds the ₹2.5 lakh ceiling."
+                })
+        else:
+            unknown.append({
+                "criterion": "Family Income Ceiling",
+                "prompt": "What is your family's total annual income (must be ₹2.5 lakh or less)?"
+            })
+
+        occ = (profile.get("occupation") or "").lower()
+        if occ == "student":
+            satisfied.append({
+                "criterion": "Student Status",
+                "official_rule": "Must be a regular student in Class 9, 10, 11, or 12 in an identified school.",
+                "citizen_value": "Student"
+            })
+        else:
+            unknown.append({
+                "criterion": "Student Status",
+                "prompt": "Are you currently enrolled in Class 9 through 12 in a recognized school?"
+            })
+
     # Determine overall status
     if len(unsatisfied) > 0:
         status = "ineligible"

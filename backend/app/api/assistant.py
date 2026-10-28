@@ -10,7 +10,8 @@ from app.schemas.assistant import (
     AssistantChatRequest,
     AssistantChatResponse,
     AssistantStatusResponse,
-    CitationSchema
+    CitationSchema,
+    MatchedSchemeSchema
 )
 from app.services.rag.retrieval import retrieve_grounded_passages
 from app.services.ai.groq_service import (
@@ -18,7 +19,13 @@ from app.services.ai.groq_service import (
     get_clean_groq_api_key,
     get_clean_groq_model
 )
-from app.services.ai.profile_extractor import extract_citizen_profile, generate_profile_followups
+from app.services.ai.profile_extractor import (
+    extract_citizen_profile,
+    generate_profile_followups,
+    detect_query_language,
+    clean_speech_text,
+    classify_profile_facts
+)
 from app.services.eligibility.engine import evaluate_scheme_eligibility
 
 router = APIRouter(prefix="/assistant", tags=["Assistant & RAG"])
@@ -110,7 +117,7 @@ async def chat_with_assistant(
     if not query:
         raise HTTPException(status_code=400, detail="Query cannot be empty.")
 
-    # 1. Conversational fact extraction
+    # 1. Conversational fact extraction & privacy-preserving classification
     extracted_profile = extract_citizen_profile(query)
     
     # Merge existing conversation profile if provided (multi-turn memory)
@@ -119,17 +126,28 @@ async def chat_with_assistant(
             if extracted_profile.get(k) is None and v is not None:
                 extracted_profile[k] = v
 
+    # Classify facts strictly into confirmed, inferred, unknown, contradictory
+    fact_classification = classify_profile_facts(extracted_profile, query)
+
+    # Detect language of the query and determine response language
+    detected_lang = detect_query_language(query, req.preferred_language or "en")
+    response_lang = "hi" if (detected_lang in ["hi", "hi-Latn"] or (req.preferred_language and req.preferred_language.startswith("hi"))) else "en"
+
     # 2. Retrieve top verified passages using stopword filtering & domain intent matching
-    # Multi-turn contextualization: if user is answering a follow-up, incorporate confirmed profile facts
+    # Multi-turn contextualization: incorporate confirmed profile facts into retrieval
     search_query = query
+    context_cues = []
     if req.existing_profile:
-        context_cues = []
         if req.existing_profile.get("occupation"):
             context_cues.append(str(req.existing_profile["occupation"]))
         if req.existing_profile.get("housing_type"):
             context_cues.append(str(req.existing_profile["housing_type"]))
-        if context_cues:
-            search_query = f"{query} {' '.join(context_cues)}"
+    if extracted_profile.get("occupation"):
+        context_cues.append(str(extracted_profile["occupation"]))
+    if extracted_profile.get("owns_cultivable_land"):
+        context_cues.append("land farmer")
+    if context_cues:
+        search_query = f"{query} {' '.join(context_cues)}"
 
     passages = retrieve_grounded_passages(
         query=search_query,
@@ -139,7 +157,7 @@ async def chat_with_assistant(
     )
 
     # 3. Identify relevant top schemes and evaluate deterministic eligibility
-    top_scheme_slugs = list(dict.fromkeys([p.scheme_slug for p in passages]))[:2]
+    top_scheme_slugs = list(dict.fromkeys([p.scheme_slug for p in passages]))[:3]
     
     eligibility_evaluations: List[Dict[str, Any]] = []
     top_schemes_objs: List[Scheme] = []
@@ -182,7 +200,9 @@ async def chat_with_assistant(
     result = await generate_grounded_answer(
         query=query,
         passages=passages,
-        preferred_language=req.preferred_language,
+        preferred_language=req.preferred_language or "en",
+        detected_language=detected_lang,
+        response_language=response_lang,
         extracted_profile=extracted_profile,
         eligibility_evaluations=eligibility_evaluations,
         follow_up_prompt=follow_up_prompt
@@ -206,8 +226,111 @@ async def chat_with_assistant(
         for c in result.get("citations", [])
     ]
 
+    # Build structured matched schemes list (top 3)
+    matched_schemes: List[MatchedSchemeSchema] = []
+    match_reasons_list: List[str] = []
+    for s_obj in top_schemes_objs[:3]:
+        ev = next((e for e in eligibility_evaluations if e["scheme_slug"] == s_obj.slug), None)
+        status_val = ev["status"] if ev else "unknown"
+
+        # Why it fits explanation
+        reasons = []
+        if ev and ev.get("satisfied_conditions"):
+            reasons.extend([f"{sc['criterion']}: {sc.get('citizen_value', 'Met')}" for sc in ev["satisfied_conditions"]])
+        
+        why_str = f"Matches your profile: {'; '.join(reasons)}" if reasons else f"Identified as highly relevant for {s_obj.name} based on official scheme guidelines."
+        match_reasons_list.append(why_str)
+        why_list = reasons if reasons else [f"Identified based on eligibility criteria for {s_obj.name}."]
+
+        # Missing information
+        missing_items = [
+            uc.get("prompt", uc["criterion"])
+            for uc in (ev.get("unknown_conditions", []) if ev else [])
+        ][:3]
+
+        matched_schemes.append(
+            MatchedSchemeSchema(
+                scheme_slug=s_obj.slug,
+                scheme_name=s_obj.name,
+                slug=s_obj.slug,
+                name=s_obj.name,
+                authority=s_obj.department or "Government of India",
+                ministry=s_obj.department,
+                benefit_summary=s_obj.benefits_summary or s_obj.summary or "",
+                eligibility_status=status_val,
+                why_it_fits=why_list,
+                missing_information=missing_items if missing_items else [],
+                official_source_url=s_obj.official_portal_url or "https://india.gov.in",
+                official_url=s_obj.official_portal_url,
+                action_label="Prepare Application Draft",
+                action_url=f"/applications?slug={s_obj.slug}",
+                action_prefill=extracted_profile
+            )
+        )
+
+    # Primary overall eligibility status
+    primary_status = eligibility_evaluations[0]["status"] if eligibility_evaluations else "unknown"
+
+    # Document checklist for primary matched scheme
+    primary_checklist: List[str] = []
+    if top_schemes_objs and top_schemes_objs[0].required_documents:
+        for doc in top_schemes_objs[0].required_documents:
+            doc_name = doc.get("name") if isinstance(doc, dict) else str(doc)
+            primary_checklist.append(doc_name)
+
+    # Concrete next steps
+    next_steps_list = []
+    if primary_status == "eligible":
+        next_steps_list = [
+            "Use JanSahayak's Application Preparation tool to assemble your verified draft.",
+            f"Collect the {len(primary_checklist)} required documents from the checklist.",
+            f"Submit directly on the official portal ({top_schemes_objs[0].official_portal_url if top_schemes_objs else 'india.gov.in'}) or visit a CSC."
+        ]
+    elif primary_status == "possibly_eligible":
+        next_steps_list = [
+            "Provide the missing details highlighted in the follow-up prompt to confirm eligibility.",
+            "Verify whether you have eligible alternative documentation for any pending criteria.",
+            "Review official guidelines on the portal link provided before applying."
+        ]
+    else:
+        next_steps_list = [
+            "Review the specific unsatisfied criteria to understand why qualification was not met.",
+            "Explore other welfare schemes in the catalogue matching your current profile.",
+            "If you believe government records are inaccurate, consider submitting an inquiry or grievance."
+        ]
+
+    # Uncertainty disclosure
+    uncertainty_statement = (
+        "JanSahayak provides rule-based informational assistance and does not guarantee official sanction; "
+        "final approval rests exclusively with the competent government department."
+    )
+
+    # Clean spoken audio text suitable for Web Speech API and Bhashini
+    answer_raw = result.get("answer", "")
+    spoken_audio_text = clean_speech_text(answer_raw)
+    if len(spoken_audio_text) > 400:
+        # Provide concise spoken summary
+        summary_intro = f"JanSahayak identified {len(matched_schemes)} relevant scheme(s): " + ", ".join([m.name for m in matched_schemes]) + ". "
+        spoken_audio_text = summary_intro + spoken_audio_text[:350].rsplit(".", 1)[0] + "."
+
     return AssistantChatResponse(
-        answer=result.get("answer", ""),
+        # Agentic structured fields
+        detected_language=detected_lang,
+        response_language=response_lang,
+        extracted_facts=fact_classification,
+        unknown_facts=fact_classification.get("unknown", []),
+        clarifying_questions=missing_criteria[:2] if missing_criteria else [],
+        matched_schemes=matched_schemes,
+        match_reasons=match_reasons_list,
+        eligibility_status=primary_status,
+        uncertainty_notes=uncertainty_statement,
+        source_citations=citations,
+        next_steps=next_steps_list,
+        application_checklist=primary_checklist,
+        response_text=answer_raw,
+        speech_text=spoken_audio_text,
+        # Legacy fields for backward compatibility
+        answer=answer_raw,
         citations=citations,
         model=result.get("model", "rule-grounded-deterministic-fallback"),
         is_fallback=result.get("is_fallback", True),

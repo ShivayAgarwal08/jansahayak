@@ -384,6 +384,148 @@ VERIFIED_SCHEMES = [
                 "document_reference": "MSME Notification No. 1/1(1)/2023-P&G, 17-09-2023"
             }
         ]
+    },
+    {
+        "slug": "atal-pension-yojana",
+        "name": "Atal Pension Yojana (APY)",
+        "name_hi": "अटल पेंशन योजना (एपीवाई)",
+        "summary": "Government-backed guaranteed minimum monthly pension scheme for unorganized sector workers, providing ₹1,000 to ₹5,000 per month after age 60.",
+        "summary_hi": "असंगठित क्षेत्र के श्रमिकों के लिए सरकार समर्थित गारंटीकृत न्यूनतम मासिक पेंशन योजना, जो 60 वर्ष की आयु के बाद ₹1,000 से ₹5,000 प्रति माह प्रदान करती है।",
+        "department": "Department of Financial Services, Ministry of Finance / PFRDA",
+        "scope": "central",
+        "applicable_states": ["ALL"],
+        "category": "pension",
+        "beneficiary_types": ["unorganized_workers", "citizens_18_to_40"],
+        "benefits_summary": "Guaranteed minimum monthly pension of ₹1,000, ₹2,000, ₹3,000, ₹4,000, or ₹5,000 from age 60. Same pension to spouse upon subscriber's demise; return of accumulated pension corpus to nominee.",
+        "eligibility_rules": {
+            "min_age": 18,
+            "max_age": 40,
+            "has_bank_account": True,
+            "income_tax_payer": False
+        },
+        "exclusions": [
+            "Persons who are or have been income tax payers as per the Income Tax Act on or after 1st October 2022",
+            "Citizens below 18 years or above 40 years of age at the time of joining",
+            "Beneficiaries already enrolled who do not maintain sufficient balance for monthly auto-debit"
+        ],
+        "required_documents": [
+            {"name": "Savings Bank Account / Post Office Account", "mandatory": True, "alternatives": []},
+            {"name": "Aadhaar Card", "mandatory": True, "alternatives": []},
+            {"name": "Active Mobile Number", "mandatory": True, "alternatives": []},
+            {"name": "Nominee Details", "mandatory": True, "alternatives": []}
+        ],
+        "application_steps": [
+            "Visit the bank branch or post office where you hold a savings bank account, or use internet banking / APY e-NPS portal.",
+            "Fill the APY Registration Form and provide nominee details.",
+            "Choose your desired monthly pension amount (₹1,000 to ₹5,000) and contribution frequency (monthly, quarterly, or half-yearly).",
+            "Provide auto-debit consent for monthly contribution deductions from your bank account.",
+            "Receive your Permanent Retirement Account Number (PRAN) and APY acknowledgement receipt."
+        ],
+        "official_portal_url": "https://www.npscra.nsdl.co.in",
+        "verification_status": "verified",
+        "sources": [
+            {
+                "source_title": "Atal Pension Yojana Operational Guidelines & Scheme Architecture",
+                "source_url": "https://www.npscra.nsdl.co.in/scheme-details.php",
+                "issuing_authority": "Pension Fund Regulatory and Development Authority (PFRDA), Govt of India",
+                "document_reference": "PFRDA/2015/01/APY/1"
+            }
+        ]
+    },
+    {
+        "slug": "pm-jeevan-jyoti-bima",
+        "name": "Pradhan Mantri Jeevan Jyoti Bima Yojana (PMJJBY)",
+        "name_hi": "प्रधानमंत्री जीवन ज्योति बीमा योजना (पीएमजेजेबीवाई)",
+        "summary": "Affordable one-year renewable term life insurance scheme offering ₹2 Lakh cover for death due to any reason for an annual premium of ₹436.",
+        "summary_hi": "मात्र ₹436 के वार्षिक प्रीमियम पर किसी भी कारण से मृत्यु होने पर ₹2 लाख का जीवन बीमा कवर प्रदान करने वाली एक वर्षीय नवीकरणीय योजना।",
+        "department": "Department of Financial Services, Ministry of Finance",
+        "scope": "central",
+        "applicable_states": ["ALL"],
+        "category": "insurance",
+        "beneficiary_types": ["all_citizens_18_to_50", "low_income"],
+        "benefits_summary": "₹2,00,000 life insurance coverage payable to the nominee upon the death of the insured member due to any cause. Annual premium of ₹436 auto-debited in single installment.",
+        "eligibility_rules": {
+            "min_age": 18,
+            "max_age": 50,
+            "has_bank_account": True
+        },
+        "exclusions": [
+            "Individuals below 18 years or above 50 years of age at enrollment (cover ceases at age 55)",
+            "Persons with closed or dormant bank accounts without sufficient balance for auto-debit",
+            "Multiple enrollments through different bank accounts (cover restricted to ₹2 Lakh maximum across all banks)"
+        ],
+        "required_documents": [
+            {"name": "Savings Bank Account or Post Office Account", "mandatory": True, "alternatives": []},
+            {"name": "Aadhaar Card", "mandatory": True, "alternatives": []},
+            {"name": "Consent-cum-Declaration form for Auto-Debit", "mandatory": True, "alternatives": []},
+            {"name": "Nominee Details and ID Proof", "mandatory": True, "alternatives": []}
+        ],
+        "application_steps": [
+            "Visit the bank branch or post office where you hold an active savings account, or log in via net banking.",
+            "Submit the PMJJBY enrollment form along with Aadhaar and nominee details.",
+            "Authorize annual auto-debit of ₹436 from your account (debited in May/June each year).",
+            "Receive Certificate of Insurance / Acknowledgement slip directly from your bank."
+        ],
+        "official_portal_url": "https://www.jansuraksha.gov.in",
+        "verification_status": "verified",
+        "sources": [
+            {
+                "source_title": "PMJJBY Rules and Operational Guidelines",
+                "source_url": "https://financialservices.gov.in/insurance-divisions/Government-Sponsored-Socially-Oriented-Insurance-Schemes/Pradhan-Mantri-Jeevan-Jyoti-Bima-Yojana(PMJJBY)",
+                "issuing_authority": "Department of Financial Services, Ministry of Finance, Govt of India",
+                "document_reference": "DFS Notification F.No. H-12011/2/2015-Ins.II"
+            }
+        ]
+    },
+    {
+        "slug": "pm-yasasvi",
+        "name": "PM Young Achievers Scholarship Award Scheme for Vibrant India (PM-YASASVI)",
+        "name_hi": "पीएम यशस्वी छात्रवृत्ति योजना (पीएम-यशस्वी)",
+        "summary": "Top-class education scholarship scheme for meritorious OBC, EBC, and DNT students studying in Class 9 to Class 12 whose parental income does not exceed ₹2.5 Lakh.",
+        "summary_hi": "कक्षा 9 से 12 तक पढ़ने वाले ओबीसी, ईबीसी और डीएनटी वर्ग के मेधावी छात्रों के लिए शीर्ष स्तरीय शिक्षा छात्रवृत्ति योजना, जिनकी पारिवारिक आय ₹2.5 लाख से अधिक नहीं है।",
+        "department": "Department of Social Justice and Empowerment",
+        "scope": "central",
+        "applicable_states": ["ALL"],
+        "category": "education",
+        "beneficiary_types": ["students", "obc", "ebc", "dnt"],
+        "benefits_summary": "Up to ₹75,000 per annum for Class 9 and 10 students; up to ₹1,25,000 per annum for Class 11 and 12 students covering school tuition fees, hostel charges, and education expenses directly via DBT.",
+        "eligibility_rules": {
+            "min_age": 13,
+            "max_age": 20,
+            "occupation": ["student"],
+            "max_annual_income": 250000,
+            "target_classes": ["Class 9", "Class 10", "Class 11", "Class 12"]
+        },
+        "exclusions": [
+            "Students whose annual family income exceeds ₹2,50,000",
+            "Students not belonging to notified OBC, EBC, or DNT categories",
+            "Students already receiving another pre-matric or post-matric central/state scholarship covering identical fee components",
+            "Students studying in un-notified or un-recognized non-participating institutions"
+        ],
+        "required_documents": [
+            {"name": "Aadhaar Card of the Student", "mandatory": True, "alternatives": []},
+            {"name": "Valid Category / Caste Certificate (OBC/EBC/DNT)", "mandatory": True, "alternatives": ["Competent Authority Certificate"]},
+            {"name": "Parental Annual Income Certificate (Under ₹2.5 Lakh)", "mandatory": True, "alternatives": ["Revenue Officer Certificate"]},
+            {"name": "Previous Year Academic Marksheet", "mandatory": True, "alternatives": []},
+            {"name": "Active Student Bank Account (Aadhaar Seeded)", "mandatory": True, "alternatives": []}
+        ],
+        "application_steps": [
+            "Register online on the National Scholarship Portal (scholarships.gov.in) under PM-YASASVI scheme.",
+            "Complete One-Time Registration (OTR) with Aadhaar authentication.",
+            "Select school / institution and enter academic details from Class 8 / Class 10.",
+            "Upload Caste/Category certificate and Income certificate issued by competent revenue authority.",
+            "Submit application for online verification by School Head/Nodal Officer and District Social Welfare Officer."
+        ],
+        "official_portal_url": "https://scholarships.gov.in",
+        "verification_status": "verified",
+        "sources": [
+            {
+                "source_title": "PM Young Achievers Scholarship Scheme (PM-YASASVI) Guidelines",
+                "source_url": "https://socialjustice.gov.in/schemes/pm-yasasvi",
+                "issuing_authority": "Ministry of Social Justice and Empowerment, Govt of India",
+                "document_reference": "MoSJE Scheme Notification No. 11014/01/2021-BC"
+            }
+        ]
     }
 ]
 

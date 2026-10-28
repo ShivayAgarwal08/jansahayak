@@ -156,6 +156,24 @@ export interface SuggestedAction {
   prefill_data: Record<string, any>;
 }
 
+export interface MatchedScheme {
+  slug?: string;
+  scheme_slug?: string;
+  name?: string;
+  scheme_name?: string;
+  ministry?: string;
+  authority?: string;
+  benefit_summary?: string;
+  eligibility_status: string;
+  why_it_fits: string | string[];
+  missing_information?: string[];
+  official_url?: string;
+  official_source_url?: string;
+  action_label?: string;
+  action_url?: string;
+  action_prefill?: Record<string, any>;
+}
+
 export interface AssistantResponse {
   answer: string;
   citations: Citation[];
@@ -169,6 +187,22 @@ export interface AssistantResponse {
   follow_up_prompt?: string | null;
   eligibility_results?: EligibilityResult[];
   suggested_action?: SuggestedAction | null;
+
+  // Agentic structured fields (Phase 4)
+  detected_language?: string;
+  response_language?: string;
+  extracted_facts?: Record<string, any>;
+  unknown_facts?: string[];
+  clarifying_questions?: string[];
+  matched_schemes?: MatchedScheme[];
+  match_reasons?: string[];
+  eligibility_status?: string;
+  uncertainty_notes?: string | null;
+  source_citations?: Citation[];
+  next_steps?: string[];
+  application_checklist?: string[];
+  response_text?: string;
+  speech_text?: string;
 }
 
 export interface AssistantStatus {

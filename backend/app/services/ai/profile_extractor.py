@@ -300,9 +300,152 @@ def extract_citizen_profile(text: str) -> Dict[str, Any]:
 
     return profile
 
+def detect_query_language(text: str, preferred: Optional[str] = "en") -> str:
+    """
+    Detect the language of the citizen query:
+    - 'hi': Devanagari Hindi text
+    - 'hi-Latn': Romanized / Transliterated Hindi (Hinglish)
+    - 'en': English (or specified preferred language)
+    """
+    if not text:
+        return preferred or "en"
+
+    # 1. Check for Devanagari Unicode script range (\u0900-\u097F)
+    devanagari_chars = len(re.findall(r'[\u0900-\u097F]', text))
+    if devanagari_chars >= 3 or (len(text) > 0 and devanagari_chars / len(text) > 0.15):
+        return "hi"
+
+    # 2. Check for characteristic Romanized Hindi / Hinglish tokens
+    hinglish_markers = {
+        "kisan", "yojana", "paise", "kaise", "milega", "hoga", "sarkari", "aavedan",
+        "karna", "hai", "mujhe", "pension", "bima", "ghar", "ration", "mera", "meri",
+        "hum", "khet", "kheti", "bigha", "fasal", "bachha", "bachhe", "beti", "ladki",
+        "dawa", "ilaj", "bimar", "batao", "chahiye", "kitna", "kab", "kisko", "namaste"
+    }
+    words = set(re.findall(r'[a-zA-Z]+', text.lower()))
+    matches = words.intersection(hinglish_markers)
+    if len(matches) >= 2 or (len(words) <= 4 and len(matches) >= 1):
+        return "hi-Latn"
+
+    return preferred or "en"
+
+def clean_speech_text(text: str) -> str:
+    """
+    Convert formatted markdown/system response text into clean, natural spoken audio text.
+    Strips markdown symbols, emojis, URLs, and code blocks so speech synthesis (TTS)
+    reads smoothly without reciting syntax characters.
+    """
+    if not text:
+        return ""
+
+    # Remove code blocks
+    cleaned = re.sub(r'```[\s\S]*?```', '', text)
+    # Remove inline code
+    cleaned = re.sub(r'`([^`]+)`', r'\1', cleaned)
+    # Remove markdown link syntax [text](url) -> text
+    cleaned = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', cleaned)
+    # Remove raw URLs
+    cleaned = re.sub(r'https?://\S+', '', cleaned)
+    # Remove markdown headings, blockquotes, bullets, horizontal rules
+    cleaned = re.sub(r'^[#>\-*+]\s*', '', cleaned, flags=re.MULTILINE)
+    cleaned = re.sub(r'^[0-9]+\.\s*', '', cleaned, flags=re.MULTILINE)
+    # Remove bold, italics, strikethrough
+    cleaned = re.sub(r'[*_~]', '', cleaned)
+    # Remove emojis and non-alphanumeric symbols except standard punctuation
+    cleaned = re.sub(r'[^\w\s.,?!;:।₹%\'-]', '', cleaned, flags=re.UNICODE)
+    # Collapse multiple whitespaces and newlines into single spaces or clean sentence breaks
+    cleaned = re.sub(r'\n+', '. ', cleaned)
+    cleaned = re.sub(r'\s+', ' ', cleaned).strip()
+    return cleaned
+
+def detect_profile_contradictions(profile: Dict[str, Any], text: str = "") -> List[str]:
+    """
+    Detect explicit contradictions or mutually conflicting statements in citizen profile.
+    Prevents erroneous approvals and highlights uncertainties.
+    """
+    contradictions = []
+
+    # 1. Landless vs Landholding
+    owns_land = profile.get("owns_cultivable_land")
+    land_acres = profile.get("landholding_acres")
+    if owns_land is False and land_acres is not None and land_acres > 0:
+        contradictions.append(
+            f"Citizen reported owning {land_acres} acre(s) but simultaneously stated having no cultivable land."
+        )
+
+    # 2. Non-taxpayer vs very high annual income (exceeding standard tax-free threshold of ₹7-10 Lakh)
+    income = profile.get("annual_income")
+    pays_tax = profile.get("pays_income_tax")
+    if income is not None and income >= 1_500_000 and pays_tax is False:
+        contradictions.append(
+            f"Citizen reported annual income of ₹{int(income):,} while also claiming non-taxpayer status."
+        )
+
+    # 3. Child age vs Employment/Marriage/Adult status
+    age = profile.get("age")
+    if age is not None and age < 18:
+        if profile.get("is_govt_employee") is True:
+            contradictions.append(
+                f"Citizen stated age as {age} while claiming to be a regular government employee."
+            )
+        if profile.get("occupation") in ["farmer", "street vendor"] and age < 14:
+            contradictions.append(
+                f"Citizen stated age as {age} while claiming adult occupation as {profile.get('occupation')}."
+            )
+
+    # 4. Housing conflict: pucca house vs kutcha/houseless
+    housing = profile.get("housing_type")
+    text_lower = text.lower() if text else ""
+    if housing == "pucca" and re.search(r'\b(?:houseless|no\s+house|dilapidated|kutcha)\b', text_lower):
+        contradictions.append(
+            "Citizen mentioned possessing a pucca house while also indicating houseless or kutcha condition."
+        )
+
+    return contradictions
+
+def classify_profile_facts(profile: Dict[str, Any], text: str = "") -> Dict[str, Any]:
+    """
+    Classify facts strictly into confirmed, inferred, unknown, and contradictory categories.
+    CRITICAL PRIVACY CONSTRAINT: Never guesses or infers sensitive attributes (caste, religion,
+    disability, medical condition) without explicit user declaration.
+    """
+    confirmed = {}
+    inferred = {}
+    unknown = []
+    contradictions = detect_profile_contradictions(profile, text)
+
+    # Core profile fields
+    for field in [
+        "state", "district", "occupation", "age", "gender", "annual_income",
+        "owns_cultivable_land", "landholding_raw", "landholding_acres",
+        "housing_type", "area_type", "is_bpl", "is_govt_employee", "pays_income_tax",
+        "has_girl_child_under_10", "girl_child_age"
+    ]:
+        val = profile.get(field)
+        if val is not None:
+            confirmed[field] = val
+        else:
+            unknown.append(field)
+
+    # Safe non-sensitive inferences
+    if profile.get("area_type") == "rural":
+        inferred["panchayat_governance"] = "Rural Gram Panchayat jurisdiction"
+    if profile.get("occupation") in ["daily wage laborer", "street vendor"]:
+        inferred["sector"] = "Unorganized / Informal sector"
+    if profile.get("annual_income") is not None and profile.get("annual_income") <= 250000:
+        inferred["income_category"] = "Low Income / EWS"
+
+    return {
+        "confirmed": confirmed,
+        "inferred": inferred,
+        "unknown": unknown,
+        "contradictions": contradictions
+    }
+
 def generate_profile_followups(profile: Dict[str, Any], relevant_schemes: List[str]) -> Tuple[List[str], Optional[str]]:
     """
     Identify missing facts essential to confirm eligibility for relevant schemes and generate a focused follow-up prompt.
+    Limits to 1-2 urgent questions to avoid overwhelming the citizen.
     """
     missing_criteria = []
 
@@ -327,13 +470,32 @@ def generate_profile_followups(profile: Dict[str, Any], relevant_schemes: List[s
         if profile.get("age") is None and profile.get("is_bpl") is None:
             missing_criteria.append("What is your age, and does your family hold an eligible BPL/Antyodaya ration card?")
 
+    # If Atal Pension Yojana (APY) is relevant
+    if "atal-pension-yojana" in relevant_schemes:
+        if profile.get("age") is None:
+            missing_criteria.append("What is your age (APY is open to citizens aged 18 to 40)?")
+        if profile.get("pays_income_tax") is None:
+            missing_criteria.append("Do you or have you paid income tax (taxpayers are excluded from APY)?")
+
+    # If PM Jeevan Jyoti Bima Yojana (PMJJBY) is relevant
+    if "pm-jeevan-jyoti-bima" in relevant_schemes:
+        if profile.get("age") is None:
+            missing_criteria.append("What is your age (PMJJBY is open to individuals aged 18 to 50)?")
+
+    # If PM-YASASVI is relevant
+    if "pm-yasasvi" in relevant_schemes:
+        if profile.get("occupation") != "student" and profile.get("age") is None:
+            missing_criteria.append("Are you currently studying in Class 9 to Class 12?")
+        if profile.get("annual_income") is None:
+            missing_criteria.append("What is your family's annual income (must be ₹2.5 lakh or less for PM-YASASVI)?")
+
     # General missing state
     if profile.get("state") is None:
         missing_criteria.append("Which state or union territory do you reside in?")
 
     follow_up_prompt = None
     if missing_criteria:
-        # Pick the top 2 most urgent questions to avoid overwhelming the citizen
+        # Pick the top 1-2 most urgent questions to keep interaction conversational
         top_questions = missing_criteria[:2]
         follow_up_prompt = (
             "To confirm your eligibility under official scheme criteria, could you please clarify: "

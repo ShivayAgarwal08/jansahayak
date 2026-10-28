@@ -20,7 +20,26 @@ class AssistantChatRequest(BaseModel):
     preferred_language: str = "en"
     existing_profile: Optional[Dict[str, Any]] = None
 
+class MatchedSchemeSchema(BaseModel):
+    scheme_slug: str
+    scheme_name: str
+    slug: Optional[str] = None
+    name: Optional[str] = None
+    authority: Optional[str] = "Government of India"
+    ministry: Optional[str] = None
+    benefit_summary: Optional[str] = ""
+    why_it_fits: List[str] = []
+    missing_information: Optional[List[str]] = []
+    official_source_url: Optional[str] = "https://india.gov.in"
+    official_url: Optional[str] = None
+    official_guideline_url: Optional[str] = None
+    eligibility_status: str = "unknown"
+    action_label: Optional[str] = "Prepare Application Draft"
+    action_url: Optional[str] = None
+    action_prefill: Optional[Dict[str, Any]] = None
+
 class AssistantChatResponse(BaseModel):
+    # Core response text & citations (backward-compatible)
     answer: str
     citations: List[CitationSchema]
     model: str
@@ -33,6 +52,22 @@ class AssistantChatResponse(BaseModel):
     follow_up_prompt: Optional[str] = None
     eligibility_results: Optional[List[Dict[str, Any]]] = None
     suggested_action: Optional[Dict[str, Any]] = None
+
+    # Agentic structured fields (Phase 4 Specification)
+    detected_language: str = "en"
+    response_language: str = "en"
+    extracted_facts: Dict[str, Any] = {}
+    unknown_facts: List[str] = []
+    clarifying_questions: List[str] = []
+    matched_schemes: List[MatchedSchemeSchema] = []
+    match_reasons: List[str] = []
+    eligibility_status: str = "informational"
+    uncertainty_notes: Optional[str] = None
+    source_citations: List[CitationSchema] = []
+    next_steps: List[str] = []
+    application_checklist: List[str] = []
+    response_text: str = ""
+    speech_text: str = ""
 
 class AssistantStatusResponse(BaseModel):
     groq_configured: bool
