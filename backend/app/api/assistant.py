@@ -248,6 +248,13 @@ async def chat_with_assistant(
             for uc in (ev.get("unknown_conditions", []) if ev else [])
         ][:3]
 
+        # Determine verified official URL without guessing
+        verified_url = getattr(s_obj, "official_portal_url", None)
+        if not verified_url and getattr(s_obj, "sources", None):
+            sources_list = list(s_obj.sources)
+            if sources_list and hasattr(sources_list[0], "source_url"):
+                verified_url = sources_list[0].source_url
+
         matched_schemes.append(
             MatchedSchemeSchema(
                 scheme_slug=s_obj.slug,
@@ -260,8 +267,8 @@ async def chat_with_assistant(
                 eligibility_status=status_val,
                 why_it_fits=why_list,
                 missing_information=missing_items if missing_items else [],
-                official_source_url=s_obj.official_portal_url or "https://india.gov.in",
-                official_url=s_obj.official_portal_url,
+                official_source_url=verified_url,
+                official_url=verified_url,
                 action_label="Prepare Application Draft",
                 action_url=f"/applications?slug={s_obj.slug}",
                 action_prefill=extracted_profile
@@ -310,8 +317,18 @@ async def chat_with_assistant(
     spoken_audio_text = clean_speech_text(answer_raw)
     if len(spoken_audio_text) > 400:
         # Provide concise spoken summary
-        summary_intro = f"JanSahayak identified {len(matched_schemes)} relevant scheme(s): " + ", ".join([m.name for m in matched_schemes]) + ". "
-        spoken_audio_text = summary_intro + spoken_audio_text[:350].rsplit(".", 1)[0] + "."
+        if matched_schemes:
+            scheme_names = [m.scheme_name or m.name for m in matched_schemes if (m.scheme_name or m.name)]
+            summary_intro = (
+                f"JanSahayak identified {len(scheme_names)} relevant scheme(s): "
+                + ", ".join(scheme_names)
+                + ". "
+                if scheme_names
+                else ""
+            )
+        else:
+            summary_intro = ""
+        spoken_audio_text = (summary_intro + spoken_audio_text[:350].rsplit(".", 1)[0] + ".").strip()
 
     return AssistantChatResponse(
         # Agentic structured fields

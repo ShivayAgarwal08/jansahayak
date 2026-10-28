@@ -244,3 +244,67 @@ def test_chat_endpoint_hindi_language_preservation(client):
     assert data["response_language"] == "hi"
     assert len(data["matched_schemes"]) > 0
     assert data["matched_schemes"][0]["slug"] == "pm-kisan"
+    assert data["matched_schemes"][0]["scheme_slug"] == "pm-kisan"
+
+
+def test_chat_endpoint_empty_matched_schemes_on_fabricated_query(client):
+    # Fabricated / ungrounded query with no matched scheme
+    payload = {
+        "query": "Tesla electric car distribution lottery scheme free gold voucher",
+        "preferred_language": "en"
+    }
+    response = client.post("/api/assistant/chat", json=payload)
+    assert response.status_code == 200
+    data = response.json()
+
+    assert "matched_schemes" in data
+    assert isinstance(data["matched_schemes"], list)
+    assert len(data["matched_schemes"]) == 0
+    # Clean speech summary handles empty matched schemes gracefully
+    assert "speech_text" in data
+    assert "JanSahayak identified 0" not in data["speech_text"]
+    # Legacy fields contract
+    assert "answer" in data
+    assert "citations" in data
+    assert "extracted_profile" in data
+    assert "eligibility_results" in data
+def test_matched_scheme_serialization_canonical_and_aliases(client):
+    payload = {
+        "query": "What are the benefits and guidelines of PM-KISAN for farmers?",
+        "preferred_language": "en"
+    }
+    response = client.post("/api/assistant/chat", json=payload)
+    assert response.status_code == 200
+    data = response.json()
+
+    assert len(data["matched_schemes"]) > 0
+    scheme = data["matched_schemes"][0]
+
+    # Canonical agentic fields
+    assert "scheme_slug" in scheme
+    assert scheme["scheme_slug"] == "pm-kisan"
+    assert "scheme_name" in scheme
+    assert "PM-KISAN" in scheme["scheme_name"] or "Pradhan Mantri Kisan" in scheme["scheme_name"]
+    assert "authority" in scheme
+    assert "why_it_fits" in scheme
+    assert isinstance(scheme["why_it_fits"], list)
+    assert "official_source_url" in scheme
+    assert "action_label" in scheme
+    assert scheme["action_label"] == "Prepare Application Draft"
+    assert "action_url" in scheme
+    assert "/applications?slug=pm-kisan" in scheme["action_url"]
+
+    # Backward compatibility aliases
+    assert "slug" in scheme
+    assert scheme["slug"] == scheme["scheme_slug"]
+    assert "name" in scheme
+    assert scheme["name"] == scheme["scheme_name"]
+    assert "ministry" in scheme
+    assert "official_url" in scheme
+    assert scheme["official_url"] == scheme["official_source_url"]
+
+    # Legacy contract fields preserved on root response
+    assert "answer" in data
+    assert "citations" in data
+    assert "extracted_profile" in data
+    assert "eligibility_results" in data

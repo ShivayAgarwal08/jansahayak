@@ -157,21 +157,22 @@ export interface SuggestedAction {
 }
 
 export interface MatchedScheme {
-  slug?: string;
-  scheme_slug?: string;
-  name?: string;
-  scheme_name?: string;
-  ministry?: string;
+  scheme_slug: string;
+  scheme_name: string;
   authority?: string;
   benefit_summary?: string;
-  eligibility_status: string;
   why_it_fits: string | string[];
   missing_information?: string[];
-  official_url?: string;
   official_source_url?: string;
+  official_guideline_url?: string;
+  eligibility_status: string;
   action_label?: string;
   action_url?: string;
   action_prefill?: Record<string, any>;
+  slug?: string;
+  name?: string;
+  ministry?: string;
+  official_url?: string;
 }
 
 export interface AssistantResponse {
