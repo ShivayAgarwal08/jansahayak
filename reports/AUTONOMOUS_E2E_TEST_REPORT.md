@@ -246,3 +246,95 @@ Tested directly against Render running commit `8ffd8afdc069dead7ea027db89a32388a
 
 ### Remaining Conditions for Full Production Release
 1. **External API Credentials Injection:** Add `BHASHINI_API_KEY`, `BHASHINI_USER_ID`, and WhatsApp Cloud API credentials in Render environment settings to unblock voice and WhatsApp channels. (Browser Web Speech API and webhook validation remain active fallbacks).
+
+---
+
+## 9. Final Demo Readiness Check & Production Demo Runbook
+
+**Demo Readiness Verdict:** **`DEMO READY`** (Conditional on documented external credential blockers)
+
+### A. Live System Status & Verified Endpoints
+- **Frontend URL:** [`https://jansahayak-two.vercel.app`](https://jansahayak-two.vercel.app) — Verified HTTP 200 (Vercel production edge deployment).
+- **Backend URL:** [`https://jansahayak-backend-kvuq.onrender.com`](https://jansahayak-backend-kvuq.onrender.com) — Verified HTTP 200:
+  * `/api/health`: Status `healthy`, `git_commit`: `8ffd8afdc069dead7ea027db89a32388a6f4a230`, Service: `JanSahayak Civic Platform API v1.0.0`.
+  * `/api/health/db`: Status `healthy`, `database`: `connected`, `dialect`: `postgresql`.
+  * `/api/assistant/status`: Status `online`, `groq_configured`: `true`, Model: `llama-3.3-70b-versatile`, `fallback_available`: `true`.
+- **Git Revision Parity:** Local HEAD and GitHub `origin/main` at [`8118cde`](https://github.com/ShivayAgarwal08/jansahayak/commit/8118cde). Working tree clean.
+
+### B. Artifact Verification on Disk
+All referenced test artifacts and recordings were independently verified on disk:
+- `reports/AUTONOMOUS_E2E_TEST_REPORT.md` (22,463 bytes)
+- `final_browser_acceptance_1792373404319.webp` (3,838,288 bytes)
+- `production_e2e_audit_1792370483318.webp` (14,011,678 bytes)
+- `.system_generated/click_feedback/click_feedback_1792373571656.png` (88,382 bytes)
+- `.system_generated/click_feedback/click_feedback_1792373633763.png` (86,307 bytes)
+- `browser/scratchpad_04pa05s7.md` (1,036 bytes, 8/8 checklist items passed)
+- `landing_page_1792370494472.png` (156,740 bytes)
+- `schemes_page_1792370508809.png` (243,390 bytes)
+- `search_farmer_results_1792370522406.png` (177,931 bytes)
+- `assistant_response_1792370601274.png` (198,196 bytes)
+- `scam_response_text_1792370777142.png` (174,784 bytes)
+
+### C. Citizen Perspective & Uncertainty Communication
+1. **No-Guarantee Legal Disclaimer:** The eligibility engine strictly returns `self.disclaimer`:
+   > *"This automated assessment is rule-based informational guidance and does not constitute official sanction, approval, or guarantee of welfare benefits by the issuing government department."*
+2. **Missing Information Communication:** The assistant identifies missing criteria and flags them under a prominent banner: *"Missing Information Needed for Official Qualification"*.
+3. **Contradiction Defense:** Submitting conflicting facts (e.g. landless with > 0 hectares, or minor age >= 18) yields `REQUIRES_OFFICIAL_CONFIRMATION` instead of unearned eligibility.
+4. **Provider Transparency:** The UI informs the user when answers are powered by Groq Llama-3.3-70B vs. the deterministic Rule Engine fallback.
+
+---
+
+### D. Production Demo Runbook
+
+#### Stage 1: Landing Page & Privacy Assurance (30 seconds)
+1. Open [`https://jansahayak-two.vercel.app`](https://jansahayak-two.vercel.app).
+2. Highlight the **"Zero-Aadhaar Data Collection"** privacy guarantee and national multilingual civic vision.
+3. Show header navigation: Discover Schemes, Eligibility Engine, Voice Assistant, Application Prep, RTI Drafter, Public Grievance.
+
+#### Stage 2: Schemes Catalogue & Indic Typo Search (1 minute)
+1. Navigate to **Discover Schemes** (`/schemes`).
+2. Search: `farmer` $\to$ Instant filter to **PM-KISAN**.
+3. Clear and search Indic phonetic transliteration:
+   `pardon muntri kishaan samann nidhy do hazaar`
+   *Expected Result:* Resolves via RAG phonetic fallback to **PM-KISAN (Pradhan Mantri Kisan Samman Nidhi)** with ₹6,000 income support details.
+4. Search second phonetic query:
+   `ayusman bhrat rogoya bima 500000`
+   *Expected Result:* Resolves to **Ayushman Bharat - PM-JAY** (₹5,00,000 health cover).
+
+#### Stage 3: Scam Defense & Abstention (45 seconds)
+1. Search fabricated query in catalogue:
+   `Tesla electric car distribution scheme`
+   *Expected Result:* Displays clear empty state (*"No schemes found matching your criteria"*, 0 schemes shown).
+
+#### Stage 4: AI Voice & Grounded Chat Assistant (2 minutes)
+1. Navigate to **Voice Assistant** (`/assistant`).
+2. Query: *"What is PM-KISAN and what are its main benefits?"*
+   *Expected Result:*
+   * Structured answer detailing ₹6,000 annual direct benefit transfer in 3 installments.
+   * **Verified Official Portal Sources:** 4 citations with clickable links to official guidelines at `pmkisan.gov.in`.
+   * **Missing Information Banner:** Asks if citizen owns cultivable land and whether household pays income tax.
+   * **Action CTA:** *"Prepare Application Draft for PM-KISAN"*.
+3. Adversarial Chat Test: *"Can I apply for the Tesla electric car distribution scheme?"*
+   *Expected Result:* Assistant safely abstains, warns against scams, and advises verifying legitimate schemes on government portals.
+
+#### Stage 5: Deterministic Eligibility & Contradiction Protection (1 minute)
+1. Navigate to **Eligibility Engine** (`/eligibility`).
+2. Select **PM-KISAN** and test standard profile vs. contradictory profile (e.g. landless with landholding).
+   *Expected Result:* Deterministic evaluation displays official statutory rules and the legal non-sanction disclaimer.
+
+---
+
+### E. Contingency & Fallback Procedures
+1. **Render Free-Tier Cold Start (30-second delay):** If the backend has spun down due to inactivity, the first API request may take 25–35 seconds to respond.
+   * *Mitigation:* Warm up the backend 2 minutes prior to the live presentation by pinging `https://jansahayak-backend-kvuq.onrender.com/api/health`.
+2. **Groq AI Rate Limit / Outage Fallback:**
+   * If Groq API experiences rate limits or network latency, JanSahayak automatically switches to the built-in deterministic rule engine (`is_fallback: true`).
+   * The UI displays an amber badge: *"Rule Engine Active: Synthesized from verified official scheme criteria."* The demo continues uninterrupted without hallucinations.
+3. **Voice Input Fallback:**
+   * If MeitY Bhashini credentials are not yet injected, the assistant seamlessly falls back to the native browser Web Speech API (`SpeechRecognition` / `SpeechSynthesis`).
+
+---
+
+### F. Explicitly Blocked External Integrations
+- **MeitY Bhashini Voice API:** **`BLOCKED`** pending official credentials.
+- **Meta WhatsApp Cloud API:** **`BLOCKED`** pending official credentials.
